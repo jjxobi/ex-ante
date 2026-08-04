@@ -10,3 +10,9 @@ logs/
 .duckdb
 *.duckdb.wal
 *.csv
+data/
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+.venv/
+*.egg-info/
