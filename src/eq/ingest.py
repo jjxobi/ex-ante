@@ -36,31 +36,14 @@ def _chunk_ranges(start: date, end: date, years: int) -> list[tuple[date, date]]
     """
     chunks: list[tuple[date, date]] = []
     current = start
-
     while current < end:
-        # Calculate the next boundary
-        next_year = current.year + years
-        # Handle year overflow
-        if next_year > end.year or (next_year == end.year and current.month > end.month) or (next_year == end.year and current.month == end.month and current.day > end.day):
-            # Next boundary would exceed end, so end this chunk at the actual end
-            chunks.append((current, end))
-            break
-
-        # Try to create a date at the next year boundary
         try:
-            chunk_end = date(next_year, current.month, current.day)
+            nxt = current.replace(year=current.year + years)
         except ValueError:
-            # Handle Feb 29 in non-leap years
-            chunk_end = date(next_year, current.month, 28)
-
-        # If chunk_end exceeds our target end, use end instead
-        if chunk_end > end:
-            chunks.append((current, end))
-            break
-
+            nxt = current.replace(year=current.year + years, day=28)
+        chunk_end = min(nxt, end)
         chunks.append((current, chunk_end))
         current = chunk_end
-
     return chunks
 
 
@@ -102,6 +85,14 @@ def snapshot_full_catalogue(today: date, *, fetch=geonet.fetch_csv) -> Path:
         url = geonet.build_url(SNAPSHOT_MIN_MAGNITUDE, chunk_start, chunk_end)
         text = fetch(url)
         records = parse.parse_catalogue_csv(text)
+
+        # A well formed HTTP 200 with a header-only body is a known Quake Search
+        # failure mode under load. Left unchecked, that chunk's events vanish
+        # silently and the remaining chunks write a file indistinguishable from
+        # a complete one. Raise immediately rather than only checking the
+        # aggregate at the end.
+        if not records:
+            raise EmptyCatalogueError(f"no events returned for chunk {chunk_start} to {chunk_end}")
 
         # Accumulate and deduplicate by publicid, keeping latest modificationtime
         for record in records:

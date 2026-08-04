@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from datetime import date, datetime, timezone
 
-from eq import ingest
+from eq import ingest, paths, revisions
 
 
 def _as_date(text: str) -> date:
@@ -25,10 +25,10 @@ def main(argv: list[str] | None = None) -> int:
     rng.add_argument("--min-magnitude", type=float, required=True)
     rng.add_argument("--out", required=True)
 
-    try:
-        args = parser.parse_args(argv)
-    except SystemExit:
-        return 2
+    dff = sub.add_parser("diff", help="diff the two newest snapshots into a revision record")
+    dff.add_argument("--date", type=_as_date, default=None)
+
+    args = parser.parse_args(argv)
 
     if args.command == "snapshot":
         today = args.date or datetime.now(timezone.utc).date()
@@ -41,6 +41,18 @@ def main(argv: list[str] | None = None) -> int:
             args.start, args.end, args.min_magnitude, args.out
         )
         print(f"wrote {count} records to {args.out}")
+        return 0
+
+    if args.command == "diff":
+        observed_at = args.date or datetime.now(timezone.utc).date()
+        snapshots = sorted(paths.SNAPSHOT_DIR.glob("catalogue-*.parquet"))
+        if len(snapshots) < 2:
+            print("a diff needs two snapshots; fewer than two are present, skipping")
+            return 0
+        previous, current = snapshots[-2], snapshots[-1]
+        destination = paths.DATA_DIR / "revisions" / f"revisions-{observed_at.isoformat()}.parquet"
+        written = revisions.write_daily_diff(previous, current, destination, observed_at)
+        print(f"wrote {written} revision rows to {destination}")
         return 0
 
     return 2

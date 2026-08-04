@@ -7,13 +7,14 @@ venv/
 target/
 dbt_packages/
 logs/
-.duckdb
+*.duckdb
 *.duckdb.wal
 *.csv
 data/
 dbt/target/
 dbt/dbt_packages/
 dbt/logs/
+dbt/.user.yml
 .venv/
 *.egg-info/
 .superpowers/

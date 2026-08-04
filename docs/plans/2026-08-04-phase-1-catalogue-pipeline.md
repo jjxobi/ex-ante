@@ -14,7 +14,7 @@
 
 - Python 3.12. The repository already has `duckdb`, `pandas`, `pyarrow`, `requests`, `pytest` installed; `dbt-duckdb` is not and must be installed.
 - **No em dashes anywhere in any file**, including code comments, docstrings, commit messages, and documentation. Use commas, colons, semicolons or parentheses.
-- **No references to Claude, Anthropic, or AI assistance** anywhere. No `Co-Authored-By` trailers on commits.
+- **Every commit is attributed to Jesse O'Brien alone.** No third-party co-author trailers of any kind appear on any commit.
 - Human commits are authored `Jesse O'Brien <jesse@jesse-obrien.com>`. This is already set in the repo's local git config; do not change it.
 - Frozen values come from `DECISIONS.md` and are never hardcoded ad hoc in more than one place. Phase 1 uses only the bounding box.
 - GeoNet bounding box, verbatim: `163.60840,-49.18170,182.98828,-32.28713`

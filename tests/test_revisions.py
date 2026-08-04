@@ -1,7 +1,5 @@
 from datetime import date
 
-import pytest
-
 from eq import revisions, storage
 
 

@@ -1,5 +1,7 @@
 from datetime import date
 
+import pytest
+
 from eq import cli
 
 
@@ -39,4 +41,48 @@ def test_range_command_invokes_ingest(monkeypatch, tmp_path):
 
 
 def test_unknown_command_returns_error():
-    assert cli.main(["nonsense"]) != 0
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main(["nonsense"])
+    assert excinfo.value.code != 0
+
+
+def test_diff_command_invokes_write_daily_diff_with_two_newest_files(monkeypatch, tmp_path):
+    monkeypatch.setattr(cli.paths, "SNAPSHOT_DIR", tmp_path)
+    monkeypatch.setattr(cli.paths, "DATA_DIR", tmp_path)
+    for name in (
+        "catalogue-2026-08-01.parquet",
+        "catalogue-2026-08-02.parquet",
+        "catalogue-2026-08-03.parquet",
+    ):
+        (tmp_path / name).write_bytes(b"")
+
+    called = {}
+
+    def fake_write_daily_diff(previous, current, destination, observed_at):
+        called.update(previous=previous, current=current, destination=destination, observed_at=observed_at)
+        return 5
+
+    monkeypatch.setattr(cli.revisions, "write_daily_diff", fake_write_daily_diff)
+    exit_code = cli.main(["diff", "--date", "2026-08-03"])
+
+    assert exit_code == 0
+    assert called["previous"].name == "catalogue-2026-08-02.parquet"
+    assert called["current"].name == "catalogue-2026-08-03.parquet"
+    assert called["observed_at"] == date(2026, 8, 3)
+
+
+def test_diff_command_with_fewer_than_two_snapshots_returns_zero(monkeypatch, tmp_path):
+    monkeypatch.setattr(cli.paths, "SNAPSHOT_DIR", tmp_path)
+    (tmp_path / "catalogue-2026-08-03.parquet").write_bytes(b"")
+
+    called = {}
+
+    def fake_write_daily_diff(*args, **kwargs):
+        called["invoked"] = True
+        return 0
+
+    monkeypatch.setattr(cli.revisions, "write_daily_diff", fake_write_daily_diff)
+    exit_code = cli.main(["diff", "--date", "2026-08-03"])
+
+    assert exit_code == 0
+    assert "invoked" not in called

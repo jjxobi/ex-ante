@@ -2,7 +2,9 @@
 
 Every component resolves paths through this module so that no path string is
 written twice. REPO_ROOT is found by walking upward until DECISIONS.md is seen,
-which keeps the package importable from any working directory.
+which keeps the package importable from any working directory. This module
+covers the paths Python code needs; dbt's own connection path lives in
+`dbt/profiles.yml`, not here.
 """
 
 from pathlib import Path
@@ -22,11 +24,10 @@ DATA_DIR = REPO_ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
 SNAPSHOT_DIR = DATA_DIR / "snapshots"
 EVALUATION_DIR = DATA_DIR / "evaluation"
-DUCKDB_PATH = DATA_DIR / "eq.duckdb"
-DBT_DIR = REPO_ROOT / "dbt"
+REVISION_DIR = DATA_DIR / "revisions"
 
 
 def ensure_dirs() -> None:
     """Create every data directory this project writes to."""
-    for directory in (RAW_DIR, SNAPSHOT_DIR, EVALUATION_DIR):
+    for directory in (RAW_DIR, SNAPSHOT_DIR, EVALUATION_DIR, REVISION_DIR):
         directory.mkdir(parents=True, exist_ok=True)

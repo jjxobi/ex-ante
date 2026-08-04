@@ -100,16 +100,41 @@ def test_snapshot_issues_multiple_fetches(tmp_path, monkeypatch):
 
     def spy_fetch(url):
         seen_urls.append(url)
-        return "publicid,origintime,modificationtime,longitude,latitude,magnitude,depth\n"
+        return (
+            "publicid,origintime,modificationtime,longitude,latitude,magnitude,depth\n"
+            "id1,2020-01-01T00:00:00Z,2020-01-02T00:00:00Z,175.0,-41.0,5.0,10.0\n"
+        )
 
     # For a 2005-2026 span with 5-year chunks, should see multiple fetches
-    try:
-        ingest.snapshot_full_catalogue(date(2026, 8, 5), fetch=spy_fetch)
-    except ingest.EmptyCatalogueError:
-        # Expected, since all our fake responses are empty
-        pass
+    ingest.snapshot_full_catalogue(date(2026, 8, 5), fetch=spy_fetch)
 
     assert len(seen_urls) > 1
+
+
+def test_snapshot_empty_chunk_raises_and_writes_nothing(tmp_path, monkeypatch):
+    monkeypatch.setattr(ingest.paths, "SNAPSHOT_DIR", tmp_path)
+
+    normal_csv = (
+        "publicid,origintime,modificationtime,longitude,latitude,magnitude,depth\n"
+        "id1,2020-01-01T00:00:00Z,2020-01-02T00:00:00Z,175.0,-41.0,5.0,10.0\n"
+    )
+    header_only = "publicid,origintime,modificationtime,longitude,latitude,magnitude,depth\n"
+
+    call_count = [0]
+
+    def fetch(url):
+        call_count[0] += 1
+        # First chunk returns normal data, second chunk is a header-only body,
+        # the well formed HTTP 200 with zero events that Quake Search is known
+        # to produce under load.
+        if call_count[0] == 1:
+            return normal_csv
+        return header_only
+
+    with pytest.raises(ingest.EmptyCatalogueError):
+        ingest.snapshot_full_catalogue(date(2026, 8, 5), fetch=fetch)
+
+    assert list(ingest.paths.SNAPSHOT_DIR.glob("*.parquet")) == []
 
 
 def test_snapshot_deduplicates_across_chunk_boundaries(tmp_path, monkeypatch):
@@ -129,7 +154,6 @@ def test_snapshot_deduplicates_across_chunk_boundaries(tmp_path, monkeypatch):
             return later_csv
 
     # Patch _chunk_ranges to return exactly 2 chunks so we can control the fetch responses
-    original_chunk_ranges = ingest._chunk_ranges
     def two_chunks(start, end, years):
         return [(date(2005, 1, 1), date(2015, 1, 1)), (date(2015, 1, 1), date(2026, 8, 5))]
 

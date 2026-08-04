@@ -118,11 +118,12 @@ If a test fails:
    as a quick fix to get CI green again.
 
 The most likely genuine failure is `assert_depthtype_share`. About 42 percent
-of events above M3.5 carry an operator-assigned depth (measured precisely at
-0.424 on the current catalogue, corroborating the 0.42 recorded in
-`DECISIONS.md` section D4). If that share moves outside 20 to 65 percent, the
-depth data feeding stratum assignment has changed character, which affects
-Phase 2 onwards.
+of events above M3.5 carry an operator-assigned depth: measured precisely at
+0.424 over the M3.5 and above population on the current catalogue, matching
+the 0.42 recorded in `DECISIONS.md` section D4, which is measured over the
+same M3.5 and above population for 2005 to 2026. If that share moves outside
+20 to 65 percent, the depth data feeding stratum assignment has changed
+character, which affects Phase 2 onwards.
 
 The freshness check, `assert_catalogue_freshness`, is almost as important: it
 fails if the newest event in the catalogue is more than three days old, which
