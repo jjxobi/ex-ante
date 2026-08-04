@@ -870,6 +870,11 @@ from eq import geonet, parse, paths, storage
 SNAPSHOT_START = date(2005, 1, 1)
 SNAPSHOT_MIN_MAGNITUDE = 3.0
 
+# Quake Search rejects oversized result sets with HTTP 400. Measured against
+# the live service: 2005 to 2014 returns 33,206 rows and succeeds, 2005 to 2018
+# is rejected. The full range is about 60,000 events, so it must be chunked.
+SNAPSHOT_CHUNK_YEARS = 5
+
 
 class EmptyCatalogueError(RuntimeError):
     """Raised when GeoNet returns a well formed response containing no events."""
@@ -896,12 +901,37 @@ def ingest_range(
 
 
 def snapshot_full_catalogue(today: date, *, fetch=geonet.fetch_csv) -> Path:
-    """Take the daily full-catalogue snapshot used to build the revision curve."""
+    """Take the daily full-catalogue snapshot used to build the revision curve.
+
+    The range is fetched in chunks because Quake Search rejects oversized
+    result sets. Chunk boundaries are shared, so no time span is skipped, and
+    an event returned by two adjacent chunks is deduplicated by publicid,
+    keeping the latest modificationtime.
+
+    Any chunk failing propagates, so a partial snapshot is never written.
+    """
     paths.SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
     destination = paths.SNAPSHOT_DIR / f"catalogue-{today.isoformat()}.parquet"
-    ingest_range(
-        SNAPSHOT_START, today, SNAPSHOT_MIN_MAGNITUDE, destination, fetch=fetch
-    )
+
+    accumulated: dict[str, dict] = {}
+    for chunk_start, chunk_end in _chunk_ranges(
+        SNAPSHOT_START, today, SNAPSHOT_CHUNK_YEARS
+    ):
+        url = geonet.build_url(SNAPSHOT_MIN_MAGNITUDE, chunk_start, chunk_end)
+        for record in parse.parse_catalogue_csv(fetch(url)):
+            pid = record["publicid"]
+            existing = accumulated.get(pid)
+            if existing is None:
+                accumulated[pid] = record
+                continue
+            new_mod, old_mod = record["modificationtime"], existing["modificationtime"]
+            if new_mod is not None and (old_mod is None or new_mod > old_mod):
+                accumulated[pid] = record
+
+    if not accumulated:
+        raise EmptyCatalogueError(f"no events returned for {SNAPSHOT_START} to {today}")
+
+    storage.write_parquet_atomic(list(accumulated.values()), destination)
     return destination
 ```
 
