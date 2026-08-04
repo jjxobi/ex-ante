@@ -8,7 +8,11 @@
 select
     publicid,
     origintime,
-    cast(origintime as date) as origin_date,
+    -- origintime is TIMESTAMP WITH TIME ZONE. Casting it to date directly
+    -- resolves through the session timezone, not UTC. This project bins
+    -- events into daily forecast windows in UTC, so the timezone is pinned
+    -- explicitly here rather than left to whatever the session happens to be.
+    cast(origintime at time zone 'UTC' as date) as origin_date,
     modificationtime,
     longitude,
     latitude,

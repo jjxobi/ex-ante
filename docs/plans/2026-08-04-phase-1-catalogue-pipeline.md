@@ -1409,6 +1409,10 @@ eq:
       type: duckdb
       path: "../data/eq.duckdb"
       threads: 4
+      settings:
+        # Daily binning depends on this. A non UTC session shifts origin_date
+        # for about half the catalogue, silently and with no error.
+        TimeZone: 'UTC'
 ```
 
 Create `dbt/models/staging/stg_quakes.sql`:
@@ -1673,7 +1677,11 @@ Create `dbt/models/marts/fct_events.sql`:
 select
     publicid,
     origintime,
-    cast(origintime as date) as origin_date,
+    -- Pin the timezone explicitly. origintime is TIMESTAMPTZ, and casting one
+    -- to a date resolves through the SESSION timezone, which shifts the
+    -- calendar date for roughly half the catalogue when that session is not
+    -- UTC. This project bins events into daily forecast windows in UTC.
+    cast(origintime at time zone 'UTC' as date) as origin_date,
     modificationtime,
     longitude,
     latitude,
