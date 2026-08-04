@@ -466,13 +466,37 @@ def test_parse_handles_empty_body():
     assert parse.parse_catalogue_csv("") == []
 
 
+HEADER = (
+    "publicid,origintime,modificationtime,longitude,latitude,magnitude,depth,"
+    "magnitudetype,depthtype,evaluationstatus,evaluationmode\n"
+)
+
+
 def test_parse_skips_rows_missing_required_fields():
-    text = (
-        "publicid,origintime,modificationtime,longitude,latitude,magnitude,depth,"
-        "magnitudetype,depthtype,evaluationstatus,evaluationmode\n"
+    text = HEADER + (
         "a,2026-01-01T00:00:00.000Z,2026-01-01T00:00:00.000Z,175.0,-41.0,,10.0,MLv,,confirmed,manual\n"
     )
     assert parse.parse_catalogue_csv(text) == []
+
+
+def test_parse_raises_on_malformed_required_value():
+    # Deliberately loud. An empty magnitude is something GeoNet legitimately
+    # emits and is skipped, but a malformed one indicates a corrupted response,
+    # and silently dropping it would quietly understate the catalogue.
+    text = HEADER + (
+        "a,2026-01-01T00:00:00.000Z,2026-01-01T00:00:00.000Z,175.0,-41.0,abc,10.0,MLv,,confirmed,manual\n"
+    )
+    with pytest.raises(ValueError):
+        parse.parse_catalogue_csv(text)
+
+
+def test_parse_handles_missing_modificationtime():
+    text = HEADER + (
+        "a,2026-01-01T00:00:00.000Z,,175.0,-41.0,3.5,10.0,MLv,,confirmed,manual\n"
+    )
+    record = parse.parse_catalogue_csv(text)[0]
+    assert record["modificationtime"] is None
+    assert record["magnitude"] == pytest.approx(3.5)
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
