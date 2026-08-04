@@ -1621,13 +1621,13 @@ Expected: all tests PASS.
 
 A test that has never failed is not known to work. Prove the freshness test fires.
 
-Temporarily change `interval 3 day` to `interval 3000 day` in `dbt/tests/assert_catalogue_freshness.sql`, then run:
+Temporarily change `interval 3 day` to `interval 0 day` in `dbt/tests/assert_catalogue_freshness.sql`, then run:
 
 ```bash
 cd dbt && dbt test --profiles-dir . --select assert_catalogue_freshness && cd ..
 ```
 
-Expected: FAIL. A 3000 day window means the newest event must be from the future, which it cannot be, so the test must return a row.
+Expected: FAIL. With a zero day window the condition becomes "newest event is older than right now", which is always true for a catalogue of past events, so the test must return a row. Note the direction carefully: widening the interval makes the test PASS, because now() minus a large interval is far in the past. Narrowing it to zero is what makes it fail.
 
 Now change it back to `interval 3 day` and run the same command.
 
