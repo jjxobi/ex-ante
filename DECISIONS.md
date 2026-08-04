@@ -258,6 +258,33 @@ held at any value the bandwidth sensitivity band produced, since that band runs
 
 ---
 
+## D4a. Duplicate records in the GeoNet catalogue
+
+**One duplicate pair found in 61,191 events.** Records `2018p914028` and
+`2018p914029` are identical in every scientific field to nine decimal
+places: origintime 2018-12-05T04:34:31.164Z, latitude -40.03751793,
+longitude 174.3691163, magnitude 3.086434784, depth 111.875, magnitudetype
+M. They differ only in publicid and in modificationtime, fourteen minutes
+apart. Both are evaluationmode "automatic" with an empty evaluationstatus,
+meaning neither was ever reviewed. This is one earthquake ingested twice by
+GeoNet's automatic system and never merged, not two earthquakes and not a
+parsing fault in this pipeline. No other origintime is shared anywhere else
+in the catalogue.
+
+**Why it matters.** A duplicate inflates the observed event count for
+whatever spatial and temporal bin it falls in, and observed event count is
+exactly what the N-test consumes in Phase 3. Left uncorrected, a duplicate
+biases that test toward over-counting, however slightly.
+
+**Phase 1 keeps both records.** This project does not quietly alter source
+data, so nothing is dropped here. A dbt test, `assert_no_duplicate_origins`,
+detects duplicate (origintime, latitude, longitude) groups and excludes this
+single documented pair by publicid so a genuinely new duplicate still fails
+the build. Whether to exclude duplicates from the target set is a Phase 2
+decision, to be made when the target set is defined.
+
+---
+
 ## D5. Spatial grid
 
 Cells of 0.1 degree by 0.1 degree. 4,100 cells, being every 0.1 degree cell
