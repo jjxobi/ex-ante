@@ -273,13 +273,19 @@ def test_fetch_csv_backs_off_exponentially():
 
 
 def test_fetch_csv_raises_after_exhausting_attempts():
+    # Capture the sleeps rather than discarding them. fetch_csv deliberately
+    # does not sleep after the final failed attempt, and only asserting on the
+    # exception would let a regression reintroduce that wasted sleep unnoticed.
+    waits = []
     session = FlakySession(failures=99)
     with pytest.raises(geonet.GeoNetError) as excinfo:
         geonet.fetch_csv(
-            "http://example.test", session=session, max_attempts=3, sleep=lambda _: None
+            "http://example.test", session=session, max_attempts=3, sleep=waits.append
         )
     assert "3 attempts" in str(excinfo.value)
+    assert "connection reset by peer" in str(excinfo.value)
     assert session.calls == 3
+    assert waits == [5, 10]
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
