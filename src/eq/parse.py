@@ -47,7 +47,12 @@ def _parse_timestamp(raw: str) -> datetime | None:
 def parse_catalogue_csv(text: str) -> list[dict]:
     """Convert Quake Search CSV text into typed records.
 
-    Rows missing any required field are skipped rather than guessed at.
+    Rows missing any required field are skipped because GeoNet legitimately
+    emits events without a computed magnitude, and those cannot belong to a
+    magnitude-thresholded target set. A present-but-unparseable value (e.g.
+    magnitude = "abc") raises ValueError instead, because that indicates a
+    corrupted response, and silently skipping corrupted rows would quietly
+    shrink the catalogue.
     """
     if not text.strip():
         return []

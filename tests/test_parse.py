@@ -48,3 +48,27 @@ def test_parse_skips_rows_missing_required_fields():
         "a,2026-01-01T00:00:00.000Z,2026-01-01T00:00:00.000Z,175.0,-41.0,,10.0,MLv,,confirmed,manual\n"
     )
     assert parse.parse_catalogue_csv(text) == []
+
+
+def test_parse_raises_on_malformed_required_value():
+    text = (
+        "publicid,origintime,modificationtime,longitude,latitude,magnitude,depth,"
+        "magnitudetype,depthtype,evaluationstatus,evaluationmode\n"
+        "a,2026-01-01T00:00:00.000Z,2026-01-01T00:00:00.000Z,175.0,-41.0,abc,10.0,MLv,,confirmed,manual\n"
+    )
+    with pytest.raises(ValueError):
+        parse.parse_catalogue_csv(text)
+
+
+def test_parse_handles_missing_modificationtime():
+    text = (
+        "publicid,origintime,modificationtime,longitude,latitude,magnitude,depth,"
+        "magnitudetype,depthtype,evaluationstatus,evaluationmode\n"
+        "a,2026-01-01T00:00:00.000Z,,175.0,-41.0,3.5,10.0,MLv,,confirmed,manual\n"
+    )
+    records = parse.parse_catalogue_csv(text)
+    assert len(records) == 1
+    assert records[0]["publicid"] == "a"
+    assert records[0]["origintime"] == datetime(2026, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+    assert records[0]["modificationtime"] is None
+    assert records[0]["magnitude"] == pytest.approx(3.5)
