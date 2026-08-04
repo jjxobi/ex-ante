@@ -19,10 +19,49 @@ from eq import geonet, parse, paths, storage
 
 SNAPSHOT_START = date(2005, 1, 1)
 SNAPSHOT_MIN_MAGNITUDE = 3.0
+SNAPSHOT_CHUNK_YEARS = 5
+"""Quake Search rejects oversized result sets with HTTP 400, measured at over 33,000 rows,
+so the range is chunked to stay well under that."""
 
 
 class EmptyCatalogueError(RuntimeError):
     """Raised when GeoNet returns a well formed response containing no events."""
+
+
+def _chunk_ranges(start: date, end: date, years: int) -> list[tuple[date, date]]:
+    """Split [start, end] into consecutive half-open ranges of at most `years` years.
+
+    Consecutive ranges share a boundary so no time is skipped. The final range
+    ends exactly at `end`.
+    """
+    chunks: list[tuple[date, date]] = []
+    current = start
+
+    while current < end:
+        # Calculate the next boundary
+        next_year = current.year + years
+        # Handle year overflow
+        if next_year > end.year or (next_year == end.year and current.month > end.month) or (next_year == end.year and current.month == end.month and current.day > end.day):
+            # Next boundary would exceed end, so end this chunk at the actual end
+            chunks.append((current, end))
+            break
+
+        # Try to create a date at the next year boundary
+        try:
+            chunk_end = date(next_year, current.month, current.day)
+        except ValueError:
+            # Handle Feb 29 in non-leap years
+            chunk_end = date(next_year, current.month, 28)
+
+        # If chunk_end exceeds our target end, use end instead
+        if chunk_end > end:
+            chunks.append((current, end))
+            break
+
+        chunks.append((current, chunk_end))
+        current = chunk_end
+
+    return chunks
 
 
 def ingest_range(
@@ -46,10 +85,42 @@ def ingest_range(
 
 
 def snapshot_full_catalogue(today: date, *, fetch=geonet.fetch_csv) -> Path:
-    """Take the daily full-catalogue snapshot used to build the revision curve."""
+    """Take the daily full-catalogue snapshot used to build the revision curve.
+
+    Fetches in chunks to avoid hitting HTTP 400 on oversized result sets, then
+    deduplicates by publicid (keeping the latest modificationtime) and writes
+    atomically.
+    """
     paths.SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
     destination = paths.SNAPSHOT_DIR / f"catalogue-{today.isoformat()}.parquet"
-    ingest_range(
-        SNAPSHOT_START, today, SNAPSHOT_MIN_MAGNITUDE, destination, fetch=fetch
-    )
+
+    # Fetch all chunks and accumulate records
+    accumulated: dict[str, dict] = {}
+    chunks = _chunk_ranges(SNAPSHOT_START, today, SNAPSHOT_CHUNK_YEARS)
+
+    for chunk_start, chunk_end in chunks:
+        url = geonet.build_url(SNAPSHOT_MIN_MAGNITUDE, chunk_start, chunk_end)
+        text = fetch(url)
+        records = parse.parse_catalogue_csv(text)
+
+        # Accumulate and deduplicate by publicid, keeping latest modificationtime
+        for record in records:
+            pid = record["publicid"]
+            if pid not in accumulated:
+                accumulated[pid] = record
+            else:
+                # Keep the record with the later modificationtime
+                existing_mod = accumulated[pid]["modificationtime"]
+                new_mod = record["modificationtime"]
+                # Compare, handling None values (treat None as oldest)
+                if new_mod is not None and (existing_mod is None or new_mod > existing_mod):
+                    accumulated[pid] = record
+
+    # Convert back to list
+    all_records = list(accumulated.values())
+
+    if not all_records:
+        raise EmptyCatalogueError(f"no events returned for {SNAPSHOT_START} to {today}")
+
+    storage.write_parquet_atomic(all_records, Path(destination))
     return destination
