@@ -136,6 +136,21 @@ history is not exposed, so the curve can only be built forward by snapshotting
 and diffing. Starting on day one costs almost nothing and is the only way to get
 the data. No such curve appears to exist publicly for the GeoNet catalogue.
 
+**What is committed is the diff, not the snapshot.** A full snapshot is 2.83 MB
+compressed, so committing one daily would cost about 1 GB per year and 5 GB over
+five years. That breaks the clone-and-reproduce requirement, which is the same
+constraint that forced the separable forecast format in D9. Full snapshots are
+therefore local, ephemeral pipeline input. What is committed is the daily
+revision diff: events new since the previous snapshot, plus every event whose
+magnitude, depth, location or evaluation status changed. That is the actual
+content of the revision curve, it costs a few KB per day, and the curve stays
+fully reproducible from committed bytes.
+
+This is a deliberate narrowing of the general statement that catalogue snapshots
+are committed. **Evaluation catalogues are unaffected**: the T+45 frozen
+catalogue for a scored window is small, and D7 requires it to be committed
+alongside its score. That requirement stands unchanged.
+
 **Reliability.** Quake Search resets connections under sustained querying,
 observed repeatedly during design measurement. Exponential backoff, caching by
 query, and a failed pull is a hard failure rather than a silent partial write.

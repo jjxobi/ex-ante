@@ -34,6 +34,7 @@
 | `src/eq/parse.py` | Pure functions: CSV text to typed records, longitude convention |
 | `src/eq/storage.py` | Atomic parquet write, never leaves partial files |
 | `src/eq/ingest.py` | Orchestration: delta ingest and full snapshot |
+| `src/eq/revisions.py` | Diff consecutive snapshots into the committed revision record |
 | `src/eq/cli.py` | Command line entrypoints |
 | `dbt/dbt_project.yml` | dbt project config |
 | `dbt/profiles.yml` | DuckDB connection profile |
@@ -48,6 +49,7 @@
 | `tests/test_parse.py` | Parsing and longitude convention |
 | `tests/test_storage.py` | Atomicity under failure |
 | `tests/test_ingest.py` | Orchestration, including the outage case |
+| `tests/test_revisions.py` | Diff semantics: new, revised, withdrawn |
 
 ---
 
@@ -883,7 +885,247 @@ git commit -m "Add ingest orchestration with outage guarantees"
 
 ---
 
-### Task 6: Command line entrypoint and first real pull
+### Task 6: Daily revision diff
+
+A full snapshot is 2.83 MB compressed, so committing one daily would cost about 1 GB per year and break the clone-and-reproduce requirement. Snapshots therefore stay local and ephemeral. **The committed artifact is the diff**, which is the actual content of the magnitude-revision-versus-time curve and costs a few KB per day.
+
+**Files:**
+- Create: `src/eq/revisions.py`
+- Test: `tests/test_revisions.py`
+
+**Interfaces:**
+- Consumes: `eq.storage.read_parquet`, `eq.storage.write_parquet_atomic`, `eq.paths`
+- Produces: `eq.revisions.TRACKED_FIELDS: tuple[str, ...]`, `eq.revisions.diff_catalogues(previous: list[dict], current: list[dict]) -> list[dict]`, `eq.revisions.write_daily_diff(previous_path, current_path, destination) -> int`
+
+Each diff record has: `publicid`, `observed_at` (the current snapshot's date), `change_kind` (`"new"` or `"revised"`), and for revisions the `field`, `old_value` and `new_value` as strings. One row per changed field, so a single event revised in both magnitude and depth produces two rows.
+
+- [ ] **Step 1: Write the failing test**
+
+Create `tests/test_revisions.py`:
+
+```python
+from datetime import date
+
+import pytest
+
+from eq import revisions, storage
+
+
+def event(pid: str, magnitude: float = 3.5, depth: float = 12.0, status: str = "preliminary") -> dict:
+    return {
+        "publicid": pid,
+        "origintime": "2026-01-01T00:00:00Z",
+        "modificationtime": "2026-01-02T00:00:00Z",
+        "longitude": 175.0,
+        "latitude": -41.0,
+        "magnitude": magnitude,
+        "depth": depth,
+        "magnitudetype": "MLv",
+        "depthtype": "",
+        "evaluationstatus": status,
+        "evaluationmode": "manual",
+    }
+
+
+def test_no_changes_produces_no_rows():
+    catalogue = [event("a"), event("b")]
+    assert revisions.diff_catalogues(catalogue, catalogue) == []
+
+
+def test_new_event_is_reported_as_new():
+    rows = revisions.diff_catalogues([event("a")], [event("a"), event("b")])
+    assert len(rows) == 1
+    assert rows[0]["publicid"] == "b"
+    assert rows[0]["change_kind"] == "new"
+
+
+def test_magnitude_revision_is_reported():
+    rows = revisions.diff_catalogues([event("a", magnitude=3.4)], [event("a", magnitude=3.6)])
+    assert len(rows) == 1
+    assert rows[0]["change_kind"] == "revised"
+    assert rows[0]["field"] == "magnitude"
+    assert rows[0]["old_value"] == "3.4"
+    assert rows[0]["new_value"] == "3.6"
+
+
+def test_multiple_field_changes_produce_one_row_each():
+    rows = revisions.diff_catalogues(
+        [event("a", magnitude=3.4, depth=12.0)],
+        [event("a", magnitude=3.6, depth=33.0)],
+    )
+    assert {r["field"] for r in rows} == {"magnitude", "depth"}
+
+
+def test_evaluation_status_change_is_tracked():
+    rows = revisions.diff_catalogues(
+        [event("a", status="preliminary")], [event("a", status="confirmed")]
+    )
+    assert rows[0]["field"] == "evaluationstatus"
+
+
+def test_untracked_field_change_is_ignored():
+    before = event("a")
+    after = event("a")
+    after["modificationtime"] = "2026-06-06T00:00:00Z"
+    assert revisions.diff_catalogues([before], [after]) == []
+
+
+def test_disappeared_event_is_reported():
+    rows = revisions.diff_catalogues([event("a"), event("b")], [event("a")])
+    assert len(rows) == 1
+    assert rows[0]["publicid"] == "b"
+    assert rows[0]["change_kind"] == "withdrawn"
+
+
+def test_write_daily_diff_round_trips(tmp_path):
+    previous = tmp_path / "prev.parquet"
+    current = tmp_path / "curr.parquet"
+    out = tmp_path / "diff.parquet"
+    storage.write_parquet_atomic([event("a", magnitude=3.4)], previous)
+    storage.write_parquet_atomic([event("a", magnitude=3.9)], current)
+
+    written = revisions.write_daily_diff(previous, current, out)
+
+    assert written == 1
+    rows = storage.read_parquet(out)
+    assert rows[0]["field"] == "magnitude"
+    assert rows[0]["new_value"] == "3.9"
+
+
+def test_write_daily_diff_with_no_changes_writes_nothing(tmp_path):
+    previous = tmp_path / "prev.parquet"
+    current = tmp_path / "curr.parquet"
+    out = tmp_path / "diff.parquet"
+    storage.write_parquet_atomic([event("a")], previous)
+    storage.write_parquet_atomic([event("a")], current)
+
+    written = revisions.write_daily_diff(previous, current, out)
+
+    assert written == 0
+    assert not out.exists()
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `python -m pytest tests/test_revisions.py -v`
+Expected: FAIL with `ModuleNotFoundError: No module named 'eq.revisions'`
+
+- [ ] **Step 3: Write minimal implementation**
+
+Create `src/eq/revisions.py`:
+
+```python
+"""Daily revision diffing.
+
+GeoNet does not expose per-event revision history, so the only way to build a
+magnitude-revision-versus-time curve is to snapshot the catalogue daily and diff
+consecutive snapshots.
+
+Full snapshots are far too large to commit daily, so they stay local and
+ephemeral. The diff is what gets committed: it is the actual content of the
+curve and costs a few kilobytes a day.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from eq import storage
+
+TRACKED_FIELDS = (
+    "magnitude",
+    "depth",
+    "longitude",
+    "latitude",
+    "evaluationstatus",
+)
+
+
+def _format(value) -> str:
+    """Render a value for stable comparison and storage."""
+    if isinstance(value, float):
+        return f"{value:g}"
+    return str(value)
+
+
+def diff_catalogues(previous: list[dict], current: list[dict]) -> list[dict]:
+    """Compare two catalogue states. One row per new, withdrawn or changed field."""
+    before = {row["publicid"]: row for row in previous}
+    after = {row["publicid"]: row for row in current}
+    rows: list[dict] = []
+
+    for publicid, row in after.items():
+        if publicid not in before:
+            rows.append(
+                {
+                    "publicid": publicid,
+                    "change_kind": "new",
+                    "field": "",
+                    "old_value": "",
+                    "new_value": "",
+                }
+            )
+            continue
+
+        for field in TRACKED_FIELDS:
+            old = _format(before[publicid].get(field))
+            new = _format(row.get(field))
+            if old != new:
+                rows.append(
+                    {
+                        "publicid": publicid,
+                        "change_kind": "revised",
+                        "field": field,
+                        "old_value": old,
+                        "new_value": new,
+                    }
+                )
+
+    for publicid in before:
+        if publicid not in after:
+            rows.append(
+                {
+                    "publicid": publicid,
+                    "change_kind": "withdrawn",
+                    "field": "",
+                    "old_value": "",
+                    "new_value": "",
+                }
+            )
+
+    return rows
+
+
+def write_daily_diff(previous_path: Path, current_path: Path, destination: Path) -> int:
+    """Diff two snapshot files and write the result. Returns rows written.
+
+    Writes nothing when there are no changes, so a quiet day leaves no file
+    rather than an empty one.
+    """
+    rows = diff_catalogues(
+        storage.read_parquet(previous_path), storage.read_parquet(current_path)
+    )
+    if not rows:
+        return 0
+    storage.write_parquet_atomic(rows, Path(destination))
+    return len(rows)
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `python -m pytest tests/test_revisions.py -v`
+Expected: 9 passed
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/eq/revisions.py tests/test_revisions.py
+git commit -m "Add daily catalogue revision diffing"
+```
+
+---
+
+### Task 7: Command line entrypoint and first real pull
 
 **Files:**
 - Create: `src/eq/cli.py`
@@ -1039,7 +1281,7 @@ Do **not** commit `data/`. Confirm `.gitignore` covers it before committing; if 
 
 ---
 
-### Task 7: dbt project on DuckDB with a staging model
+### Task 8: dbt project on DuckDB with a staging model
 
 **Files:**
 - Create: `dbt/dbt_project.yml`
@@ -1201,7 +1443,7 @@ Add `dbt/target/`, `dbt/dbt_packages/`, `dbt/logs/` to `.gitignore` in this comm
 
 ---
 
-### Task 8: Data contract tests that fail on upstream change
+### Task 9: Data contract tests that fail on upstream change
 
 These are the tests that make the pipeline trustworthy. Each one encodes a fact measured during design, so if GeoNet changes practice the build breaks rather than silently absorbing it.
 
@@ -1328,7 +1570,7 @@ git commit -m "Add catalogue data contract tests"
 
 ---
 
-### Task 9: Clean event mart
+### Task 10: Clean event mart
 
 **Files:**
 - Create: `dbt/models/marts/fct_events.sql`
@@ -1446,7 +1688,7 @@ git commit -m "Add clean event mart"
 
 ---
 
-### Task 10: CI workflow and end-to-end verification
+### Task 11: CI workflow and end-to-end verification
 
 **Files:**
 - Create: `.github/workflows/ci.yml`
@@ -1593,6 +1835,7 @@ From the spec, section 8:
 - [ ] The freshness check works, and has been observed failing when deliberately broken
 - [ ] Ingest survives a simulated GeoNet outage without writing partial data, proven by `test_outage_raises_and_writes_nothing` and `test_outage_leaves_previous_file_intact`
 - [ ] Daily full snapshots have started, so the revision curve can be built forward
+- [ ] Consecutive snapshots diff into a committed revision record, since the snapshots themselves are too large to commit
 
 ## What Phase 2 picks up
 
