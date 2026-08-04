@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: fct_events
+    description: >
+      Clean, deduplicated, validated earthquake events. The single table every
+      later phase reads. Region membership and depth stratum are added in
+      Phase 2, once the frozen grid and depth boundary exist.
+    columns:
+      - name: publicid
+        tests:
+          - unique
+          - not_null
+      - name: origintime
+        tests:
+          - not_null
+      - name: origin_date
+        tests:
+          - not_null
+      - name: magnitude
+        tests:
+          - not_null
+      - name: depth_is_assigned
+        tests:
+          - not_null
+      - name: magnitude_band
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["M5+", "M4-5", "M3-4", "below M3"]
