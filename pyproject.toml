@@ -1,0 +1,28 @@
+[project]
+name = "eq"
+version = "0.1.0"
+description = "Publicly scored New Zealand seismicity forecast"
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.32",
+    "pyarrow>=17",
+    "duckdb>=1.1",
+    "pandas>=2.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "dbt-duckdb>=1.10",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
