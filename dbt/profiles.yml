@@ -5,3 +5,5 @@ eq:
       type: duckdb
       path: "../data/eq.duckdb"
       threads: 4
+      settings:
+        TimeZone: 'UTC'
