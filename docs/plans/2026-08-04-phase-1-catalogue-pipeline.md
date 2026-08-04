@@ -929,9 +929,11 @@ A full snapshot is 2.83 MB compressed, so committing one daily would cost about 
 
 **Interfaces:**
 - Consumes: `eq.storage.read_parquet`, `eq.storage.write_parquet_atomic`, `eq.paths`
-- Produces: `eq.revisions.TRACKED_FIELDS: tuple[str, ...]`, `eq.revisions.diff_catalogues(previous: list[dict], current: list[dict]) -> list[dict]`, `eq.revisions.write_daily_diff(previous_path, current_path, destination) -> int`
+- Produces: `eq.revisions.TRACKED_FIELDS: tuple[str, ...]`, `eq.revisions.diff_catalogues(previous: list[dict], current: list[dict], observed_at: date) -> list[dict]`, `eq.revisions.write_daily_diff(previous_path, current_path, destination, observed_at: date) -> int`
 
-Each diff record has: `publicid`, `observed_at` (the current snapshot's date), `change_kind` (`"new"` or `"revised"`), and for revisions the `field`, `old_value` and `new_value` as strings. One row per changed field, so a single event revised in both magnitude and depth produces two rows.
+Each diff record has: `publicid`, `observed_at` (the current snapshot's date), `change_kind` (`"new"`, `"revised"` or `"withdrawn"`), and for revisions the `field`, `old_value` and `new_value` as strings. One row per changed field, so a single event revised in both magnitude and depth produces two rows.
+
+**`observed_at` is not optional and every row must carry it.** The full snapshots are local and disposable; this diff is the only committed artifact. A revision record without a date gives the revision-over-time curve no time axis, which defeats the entire purpose of the module. Pass the date in explicitly rather than parsing it out of a filename.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1062,6 +1064,7 @@ curve and costs a few kilobytes a day.
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
 from eq import storage
@@ -1093,6 +1096,7 @@ def diff_catalogues(previous: list[dict], current: list[dict]) -> list[dict]:
             rows.append(
                 {
                     "publicid": publicid,
+                    "observed_at": observed_at,
                     "change_kind": "new",
                     "field": "",
                     "old_value": "",
@@ -1108,6 +1112,7 @@ def diff_catalogues(previous: list[dict], current: list[dict]) -> list[dict]:
                 rows.append(
                     {
                         "publicid": publicid,
+                        "observed_at": observed_at,
                         "change_kind": "revised",
                         "field": field,
                         "old_value": old,
@@ -1120,6 +1125,7 @@ def diff_catalogues(previous: list[dict], current: list[dict]) -> list[dict]:
             rows.append(
                 {
                     "publicid": publicid,
+                    "observed_at": observed_at,
                     "change_kind": "withdrawn",
                     "field": "",
                     "old_value": "",
@@ -1130,14 +1136,18 @@ def diff_catalogues(previous: list[dict], current: list[dict]) -> list[dict]:
     return rows
 
 
-def write_daily_diff(previous_path: Path, current_path: Path, destination: Path) -> int:
+def write_daily_diff(
+    previous_path: Path, current_path: Path, destination: Path, observed_at: date
+) -> int:
     """Diff two snapshot files and write the result. Returns rows written.
 
     Writes nothing when there are no changes, so a quiet day leaves no file
     rather than an empty one.
     """
     rows = diff_catalogues(
-        storage.read_parquet(previous_path), storage.read_parquet(current_path)
+        storage.read_parquet(previous_path),
+        storage.read_parquet(current_path),
+        observed_at,
     )
     if not rows:
         return 0
