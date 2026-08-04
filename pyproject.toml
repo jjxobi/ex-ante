@@ -16,6 +16,9 @@ dev = [
     "dbt-duckdb>=1.10",
 ]
 
+[project.scripts]
+eq = "eq.cli:main"
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
