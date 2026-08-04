@@ -1,0 +1,7 @@
+eq:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "../data/eq.duckdb"
+      threads: 4

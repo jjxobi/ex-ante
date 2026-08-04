@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: stg_quakes
+    description: >
+      Deduplicated GeoNet catalogue events. One row per publicid, carrying the
+      most recently modified revision seen in any snapshot.
+    columns:
+      - name: publicid
+        description: GeoNet event identifier
+        tests:
+          - unique
+          - not_null
+      - name: origintime
+        tests:
+          - not_null
+      - name: magnitude
+        tests:
+          - not_null
+      - name: depth
+        tests:
+          - not_null
+      - name: depth_is_assigned
+        description: >
+          True when GeoNet fixed the depth to a convention rather than solving
+          for it. About 42 percent of events above M3.5 carry an assigned depth,
+          so this flag is load bearing and must never be dropped.
+        tests:
+          - not_null
