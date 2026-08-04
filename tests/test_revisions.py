@@ -23,18 +23,18 @@ def event(pid: str, magnitude: float = 3.5, depth: float = 12.0, status: str = "
 
 def test_no_changes_produces_no_rows():
     catalogue = [event("a"), event("b")]
-    assert revisions.diff_catalogues(catalogue, catalogue) == []
+    assert revisions.diff_catalogues(catalogue, catalogue, date(2026, 8, 4)) == []
 
 
 def test_new_event_is_reported_as_new():
-    rows = revisions.diff_catalogues([event("a")], [event("a"), event("b")])
+    rows = revisions.diff_catalogues([event("a")], [event("a"), event("b")], date(2026, 8, 4))
     assert len(rows) == 1
     assert rows[0]["publicid"] == "b"
     assert rows[0]["change_kind"] == "new"
 
 
 def test_magnitude_revision_is_reported():
-    rows = revisions.diff_catalogues([event("a", magnitude=3.4)], [event("a", magnitude=3.6)])
+    rows = revisions.diff_catalogues([event("a", magnitude=3.4)], [event("a", magnitude=3.6)], date(2026, 8, 4))
     assert len(rows) == 1
     assert rows[0]["change_kind"] == "revised"
     assert rows[0]["field"] == "magnitude"
@@ -46,13 +46,14 @@ def test_multiple_field_changes_produce_one_row_each():
     rows = revisions.diff_catalogues(
         [event("a", magnitude=3.4, depth=12.0)],
         [event("a", magnitude=3.6, depth=33.0)],
+        date(2026, 8, 4),
     )
     assert {r["field"] for r in rows} == {"magnitude", "depth"}
 
 
 def test_evaluation_status_change_is_tracked():
     rows = revisions.diff_catalogues(
-        [event("a", status="preliminary")], [event("a", status="confirmed")]
+        [event("a", status="preliminary")], [event("a", status="confirmed")], date(2026, 8, 4)
     )
     assert rows[0]["field"] == "evaluationstatus"
 
@@ -61,11 +62,11 @@ def test_untracked_field_change_is_ignored():
     before = event("a")
     after = event("a")
     after["modificationtime"] = "2026-06-06T00:00:00Z"
-    assert revisions.diff_catalogues([before], [after]) == []
+    assert revisions.diff_catalogues([before], [after], date(2026, 8, 4)) == []
 
 
 def test_disappeared_event_is_reported():
-    rows = revisions.diff_catalogues([event("a"), event("b")], [event("a")])
+    rows = revisions.diff_catalogues([event("a"), event("b")], [event("a")], date(2026, 8, 4))
     assert len(rows) == 1
     assert rows[0]["publicid"] == "b"
     assert rows[0]["change_kind"] == "withdrawn"
@@ -78,7 +79,7 @@ def test_write_daily_diff_round_trips(tmp_path):
     storage.write_parquet_atomic([event("a", magnitude=3.4)], previous)
     storage.write_parquet_atomic([event("a", magnitude=3.9)], current)
 
-    written = revisions.write_daily_diff(previous, current, out)
+    written = revisions.write_daily_diff(previous, current, out, date(2026, 8, 4))
 
     assert written == 1
     rows = storage.read_parquet(out)
@@ -93,7 +94,20 @@ def test_write_daily_diff_with_no_changes_writes_nothing(tmp_path):
     storage.write_parquet_atomic([event("a")], previous)
     storage.write_parquet_atomic([event("a")], current)
 
-    written = revisions.write_daily_diff(previous, current, out)
+    written = revisions.write_daily_diff(previous, current, out, date(2026, 8, 4))
 
     assert written == 0
     assert not out.exists()
+
+
+def test_every_row_carries_observed_at():
+    """Produce a diff with all three change kinds and verify all rows have observed_at."""
+    obs_date = date(2026, 8, 4)
+    rows = revisions.diff_catalogues(
+        [event("a"), event("b", magnitude=3.4), event("c")],
+        [event("a"), event("b", magnitude=3.6), event("d")],
+        obs_date,
+    )
+    assert len(rows) == 3
+    for row in rows:
+        assert row["observed_at"] == obs_date
