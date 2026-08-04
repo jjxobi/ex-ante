@@ -27,6 +27,22 @@ excluded, which is the conservative direction.
 **Result.** 41 cells of 145 with any seismicity. The forecast grid is every
 0.1 degree cell inside those 41 cells, giving 4,100 grid cells.
 
+**One rule, one scale.** The region is defined by the 1 degree completeness rule
+alone. The earlier draft of this project also carried a 0.1 degree activity rule
+(keep a cell only if it contained at least one M3.0 event in 2005 to 2025), and
+that rule was **deliberately dropped**, not merged. Intersecting the two would
+punch holes inside qualified ground, forcing an event that lands in a
+completeness-qualified cell to be counted out of region purely because that
+0.1 degree cell happened to be quiet for twenty years. The activity rule existed
+only to avoid carrying tens of thousands of empty ocean cells across the full
+bounding box, and the completeness rule already solves that: 4,100 cells is
+small enough that no second filter is needed.
+
+**Hashing.** The SHA-256 covers `region/grid.parquet`, the final materialised
+4,100 cell grid, not the rule or its inputs. A future regeneration that changed
+the grid while still appearing to satisfy the rule would therefore fail the hash
+assertion rather than pass silently.
+
 **What this excludes and why it matters.** 11 measurable cells failed the
 completeness test. Every one of them lies in the northeast, along the Kermadec
 arc and its extension offshore of East Cape:
@@ -53,11 +69,63 @@ incompleteness is not stable over time (Kermadec Mc measured at 3.2, 3.4, 4.3,
 threshold below the completeness of the region you are forecasting produces
 numbers that mean nothing.
 
-**Honest caveat.** The 93 cells that could not be measured are excluded for lack
-of data, not for proven incompleteness. That makes the region partly
-activity-defined as well as completeness-defined. The cost is small, because the
-excluded unmeasurable cells contain very few target events, but it is a real
-property of the rule and not a rounding detail.
+**Honest caveat 1: unmeasurable cells.** The 93 cells that could not be measured
+are excluded for lack of data, not for proven incompleteness. That makes the
+region partly activity-defined as well as completeness-defined. The cost is
+small, because the excluded unmeasurable cells contain very few target events,
+but it is a real property of the rule and not a rounding detail.
+
+**Honest caveat 2: selection on estimation noise.** Selecting cells on measured
+Mc preferentially retains cells whose estimate happened to come out low. Across
+145 noisy per-cell estimates the retained set is therefore enriched for downward
+error, so the true worst-cell Mc is higher than the measured worst-cell Mc. This
+compounds with the known tendency of the maximum-curvature estimator to
+underestimate Mc by 0.1 to 0.3. It is the same effect as picking funds on last
+year's returns, and the 0.4 unit margin between the 2.6 ceiling and the M3.0
+threshold is thinner than it looks.
+
+The effect was measured rather than left as a worry. Retained cells shifted
++0.21 magnitude units between the selection window and a held-out window;
+non-selected cells shifted +0.18. **The differential attributable to selection
+is therefore about +0.04**, with the remaining +0.18 attributable to the era,
+since the network was genuinely worse before 2020. The selection effect is real
+but small. Caveat on the caveat: only 4 non-selected cells were measurable in
+both windows, so that differential is itself noisy.
+
+### Specification defect in this decision, found and recorded
+
+**This rule as first written was wrong, and the error is recorded rather than
+quietly corrected.**
+
+D1 originally specified that the completeness criterion applies over the 2021 to
+2026 reference window. It should have said: over **any period used for fitting
+or for scoring**. Qualifying a region on recent data and then fitting a model on
+two decades of older data means the model is fitted on ground that was not
+complete when that data was recorded.
+
+Running the held-out check exposed four retained cells that are complete now but
+were not complete over the full historical window:
+
+| Cell (lon, lat) | Mc 2021-2026 | Mc held-out | Complete from |
+|---|---|---|---|
+| (178, -37) | 2.6 | 3.0 | **2019** |
+| (179, -38) | 2.6 | 2.7 | 2017 |
+| (177, -37) | 2.6 | 2.9 | 2006 |
+| (172, -41) | 2.2 | 2.9 | 2005 |
+
+The remaining 37 cells are complete from 2005.
+
+**The region was not changed in response.** D1 is frozen, and unfreezing a
+frozen decision days after freezing it is exactly what the integrity rules exist
+to prevent. The fitting window is not a frozen decision, it is a model choice,
+and that is where the repair belongs. See the design spec for the fitting-window
+treatment.
+
+**This is enforced by a test, not by a note.** The test suite asserts that every
+retained cell has Mc <= 2.6 over the actual period used for fitting, and fails
+loudly if either the region or the fitting window moves. This class of defect
+recurs precisely when someone later extends the fit backwards in search of more
+data.
 
 **Longitude convention.** Continuous on [163.6, 183.0]. No wrapping at the
 antimeridian, because New Zealand seismicity extends past longitude 180 and
@@ -181,6 +249,12 @@ rather than silently absorbed. Boundary fitting uses free depths only.
 40 km, and the two large piles sit at 33 km and 100 km. For any boundary between
 those values the 33 km pile lands in shallow and the 100 km pile in deep, so
 assignment is insensitive to the exact boundary.
+
+**The refit did not disturb this.** The frozen boundary of 41 km sits between
+the 33 km and 100 km piles, so the robustness argument above holds unchanged
+after the boundary was recomputed on the restricted region. It would also have
+held at any value the bandwidth sensitivity band produced, since that band runs
+38.7 to 45.3 km.
 
 ---
 

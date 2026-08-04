@@ -173,6 +173,43 @@ Not filler. It is the benchmark every later model is measured against and what
 makes a skill score meaningful. A model that cannot beat a constant rate has
 demonstrated nothing. It ships before anything clever.
 
+#### Fitting window, and the defect it repairs
+
+The region is qualified on 2021 to 2026 but four retained cells were not
+complete over the full historical catalogue, as recorded in the D1 defect note.
+The region is frozen, so the repair lives here in the model layer.
+
+**Phase 2 ships fit-window truncation.** The earliest year at which *every*
+retained cell satisfies Mc 2.6 or lower is **2019**, so the baseline fits on
+2019 to 2026. Uniform treatment, no per-cell machinery, and the completeness
+rule then holds over exactly the data the model sees.
+
+The cost is recorded honestly, because it is large. Truncation supplies 8,615
+events. Per-cell exposure over the same region supplies 42,463, which is
+**4.93 times more**, because only two cells actually have short exposure:
+(178, -37) from 2019 and (179, -38) from 2017. The other 39 are complete from
+2005. Truncation discards 14 of 21 years for 39 cells that never needed it.
+
+**Exposure correction registers later as a separate model**, scored on identical
+windows against the same baseline. Each cell contributes its own complete-period
+duration, so the rate is the count over that cell's own exposure rather than
+over a common window. This is standard practice for catalogues with varying
+completeness, following Weichert (1980), which framed it for
+magnitude-dependent completeness periods; the same machinery applies when
+completeness varies spatially.
+
+Registering it as a second model rather than silently replacing the first is
+what the architecture is for. The defect becomes a second entry on the
+scoreboard and a direct public measurement of what the correction is worth,
+instead of a quiet fix nobody can audit.
+
+**The trap, recorded so it is not walked into.** Under per-cell exposure you
+cannot smooth raw counts, because exposure differs between neighbouring cells
+and the kernel would bleed a 21-year count into a 7-year cell. Counts and
+exposure must be smoothed as separate fields and divided afterwards. Doing it in
+the other order reintroduces exactly the bias being removed, in a form that is
+much harder to see.
+
 ### 4.5 publish
 
 Writes the forecast plus a manifest recording model version, input catalogue
@@ -334,6 +371,12 @@ triggered at least once to prove it alerts.
   round-trips.
 - **Property tests** on the grid: every catalogue event maps to exactly one cell
   or is explicitly counted out of region.
+- **Completeness assertion over the fitting window.** Every retained cell must
+  have measured Mc of 2.6 or lower over the actual period used for fitting. This
+  fails loudly if either the region or the fitting window moves. It is an
+  assertion rather than a note because this is the defect recorded in D1, and it
+  is the class of bug that recurs when someone later extends the fit backwards
+  in search of more data.
 - **The history audit** from Rule 2, every CI invocation.
 - **Reproducibility test**: score a known window from a clean clone, assert
   byte-identical output against the committed score.
