@@ -1372,7 +1372,9 @@ Do **not** commit `data/`. Confirm `.gitignore` covers it before committing; if 
 Run: `python -m pip install "dbt-duckdb>=1.10"`
 Expected: installs `dbt-core` and `dbt-duckdb`.
 
-Verify: `python -m dbt --version`
+Verify: `dbt --version`
+
+Note: `python -m dbt` does NOT work with dbt-core 1.12, which ships no `dbt/__main__.py`. Use the `dbt` console script. On Windows the Python Scripts directory is often not on PATH, in which case invoke the executable by its full path, or add that directory to PATH.
 
 - [ ] **Step 2: Write the dbt project files**
 
@@ -1501,7 +1503,7 @@ models:
 Run:
 
 ```bash
-cd dbt && python -m dbt build --profiles-dir . && cd ..
+cd dbt && dbt build --profiles-dir . && cd ..
 ```
 
 Expected: `stg_quakes` builds, and the four column tests pass.
@@ -1610,7 +1612,7 @@ having max(origintime) < now() - interval 3 day
 Run:
 
 ```bash
-cd dbt && python -m dbt test --profiles-dir . && cd ..
+cd dbt && dbt test --profiles-dir . && cd ..
 ```
 
 Expected: all tests PASS.
@@ -1622,7 +1624,7 @@ A test that has never failed is not known to work. Prove the freshness test fire
 Temporarily change `interval 3 day` to `interval 3000 day` in `dbt/tests/assert_catalogue_freshness.sql`, then run:
 
 ```bash
-cd dbt && python -m dbt test --profiles-dir . --select assert_catalogue_freshness && cd ..
+cd dbt && dbt test --profiles-dir . --select assert_catalogue_freshness && cd ..
 ```
 
 Expected: FAIL. A 3000 day window means the newest event must be from the future, which it cannot be, so the test must return a row.
@@ -1731,7 +1733,7 @@ models:
 Run:
 
 ```bash
-cd dbt && python -m dbt build --profiles-dir . && cd ..
+cd dbt && dbt build --profiles-dir . && cd ..
 ```
 
 Expected: `stg_quakes` and `fct_events` both build, every test passes.
@@ -1814,7 +1816,7 @@ jobs:
 
       - name: dbt build
         working-directory: dbt
-        run: python -m dbt build --profiles-dir .
+        run: dbt build --profiles-dir .
 ```
 
 - [ ] **Step 2: Write the runbook**
@@ -1856,7 +1858,7 @@ python -m eq.cli range --start 2025-01-01 --end 2026-01-01 \
 
 ```bash
 cd dbt
-python -m dbt build --profiles-dir .
+dbt build --profiles-dir .
 ```
 
 ## When a dbt test fails
@@ -1886,7 +1888,7 @@ Run:
 
 ```bash
 python -m pytest -v
-cd dbt && python -m dbt build --profiles-dir . && cd ..
+cd dbt && dbt build --profiles-dir . && cd ..
 ```
 
 Expected: all pytest tests pass, all dbt models build, all dbt tests pass.
