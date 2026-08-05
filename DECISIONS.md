@@ -525,6 +525,52 @@ An honest caveat on what was measured: `modificationtime` records the most
 recent touch of a record, so this measures record churn rather than magnitude
 churn specifically.
 
+### D7.1 What T+45 is measured from, and which snapshot is used
+
+**T+45 runs from window CLOSE, not window open.** For a weekly window that is a
+seven day difference, so it has to be stated rather than assumed.
+
+The reason is that revision lag is measured from an event's own origin time, and
+an event can occur at any point in the window including the final second. Timing
+the freeze from window open would give the last event of a weekly window only 38
+days of settling, which is inside the region where 83 percent of records are
+still moving. Timing from close guarantees every event in the window has had at
+least the full 45 days.
+
+**The evaluation snapshot is selected by date, never by recency.** The freeze
+uses the daily snapshot whose date equals window close plus 45 days. It is
+located by computing that target date explicitly and looking for that exact
+file.
+
+**If the snapshot for that exact date is missing, the freeze fails loudly.** It
+does not fall back to the nearest available snapshot. Substituting a neighbour
+would make "frozen at T+45" mean something different for that window than for
+every other one, silently and case by case, which is precisely the property the
+freeze exists to eliminate. A missing snapshot is a gap to be reported, not
+patched.
+
+This is the same defect class as the CI artifact that sorted after every real
+dated catalogue and would have been chosen by a naive newest-file rule. Taking
+the newest available snapshot would be that bug wearing different clothes.
+
+### D7.2 The four states a window can be in
+
+A scoreboard cell must distinguish these, and they must render differently. A
+reader cannot be left unable to tell a young window from a broken one.
+
+| State | Meaning |
+|---|---|
+| **PUBLISHED, NOT YET SCOREABLE** | The forecast exists and is anchored, the window has closed, but window close plus 45 days has not yet arrived. Nothing is wrong. A provisional T+7 score may be shown, labelled unstable. |
+| **SCORED** | The T+45 date has passed, the matching snapshot existed, and the evaluation ran. This is the score of record. |
+| **SCORING FAILED** | The T+45 date has passed but the score could not be produced, for example the dated snapshot was missing. The forecast stands; the evaluation is owed. This must be visible, not blank. |
+| **NEVER PUBLISHED** | Rule 1. The scheduler missed the window and no forecast was ever committed for it. Permanently unforecast, rendered as a gap, never backfilled. |
+
+Collapsing any of these into an empty cell would let a run of scheduler failures
+read as an uneventful stretch. The distinction between "not old enough yet",
+"we tried and could not", and "we never forecast this at all" is exactly the
+information a sceptical reader needs, and it is the information a project with
+this premise is least entitled to hide.
+
 ---
 
 ## D8. Declustering: fit undeclustered
@@ -585,6 +631,23 @@ anchors are therefore recorded for every forecast:
    file. A few bytes per forecast, verifiable by anyone, indefinitely, with no
    trust in the author or in GitHub.
 3. **The commit itself**, which remains useful as a cheap first check.
+
+**Information gain must never be reported without naming the benchmark's known
+weakness.** Wherever a skill score against the baseline is displayed, the same
+view must state that the baseline is a knowingly weak benchmark: its smoothing
+bandwidth sits at the feasibility boundary of the grid (D13.4a), and its spatial
+consistency test is rejected on 46 percent of windows against 5 percent
+expected (D13.4b).
+
+A future model posting positive skill against this baseline has beaten something
+measurably deficient. That comparison is honest only if the deficiency travels
+with the number. Reporting "positive information gain" alone would let a reader
+conclude the forecast is good, when what has been shown is that it is better
+than a benchmark we have already documented as poor.
+
+This is the same discipline as the duplicate write-up in D4a: state the
+limitation in the same breath as the result, not in a footnote a reader reaches
+later or never.
 
 **Publication lead time.** Forecasts are published at **T minus 2 hours** for a
 window opening at T. GitHub Actions cron is routinely delayed by several
@@ -949,6 +1012,40 @@ boundary value is expected, since they share one grid, but it is also the shape
 of the stratum mix-up caught earlier in the b-value estimator. Confirmed
 independent: the shallow curve is computed from 5,708 events and the deep from
 2,980, so neither is a reused array.
+
+### D13.4b The kernel-form trigger, stated as a rule
+
+A rule invoked once and described only in conversation is not a rule. This is
+the exact trigger condition, so the next person to face it does not have to
+reconstruct it.
+
+**Statistic.** The proportion of scored weekly windows in which the pyCSEP
+spatial consistency test returns a quantile below 0.05, computed over the most
+recent 26 complete weekly windows for a single stratum, using the frozen grid,
+the frozen threshold and the frozen fitting window. Regenerated by
+`scripts/measurements/score_quantile_calibration.py`.
+
+**Reference value.** Under a spatially correct forecast that proportion is 0.05
+by construction, so roughly 1.3 of 26 windows.
+
+**Trigger.** If the proportion exceeds **0.20**, that is four times the
+reference and more than four times the count expected by chance, the deficiency
+is treated as kernel **form** rather than kernel width. The remedy is a
+different kernel, registered as a separate model scored on identical windows,
+never a silent modification of the baseline.
+
+**Why a proportion rather than a single window's quantile.** One extreme
+quantile is unremarkable; the calibration only means anything in aggregate. The
+first scored week returned 0.0020 and that alone justified nothing.
+
+**Fired once, on 2026-08-06**, at 12 of 26 (46 percent) after the constrained
+bandwidth was frozen. Adaptive bandwidth is therefore owed as a separate model.
+
+**A note on strictness.** The pre-registered prediction was 30 to 45 percent and
+the outcome was 46 percent, one point over the ceiling. That is recorded as a
+miss. Reading it as close enough would be exactly the self-leniency
+pre-registration exists to prevent, and a prediction band that flexes to
+accommodate its own result is not a prediction.
 
 ### D13.5 Expander determinism
 
