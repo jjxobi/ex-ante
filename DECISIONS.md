@@ -277,11 +277,63 @@ exactly what the N-test consumes in Phase 3. Left uncorrected, a duplicate
 biases that test toward over-counting, however slightly.
 
 **Phase 1 keeps both records.** This project does not quietly alter source
-data, so nothing is dropped here. A dbt test, `assert_no_duplicate_origins`,
-detects duplicate (origintime, latitude, longitude) groups and excludes this
-single documented pair by publicid so a genuinely new duplicate still fails
-the build. Whether to exclude duplicates from the target set is a Phase 2
-decision, to be made when the target set is defined.
+data, so nothing is dropped here. Whether to exclude duplicates from the target
+set is a Phase 2 decision, to be made when the target set is defined.
+
+### The detection rule, and why it is exact rather than tolerance based
+
+Documenting one pair catches that pair. It does not catch the next one. The
+rule below is frozen so that new duplicates surface as a build failure rather
+than as a slow unexplained drift in the published rates.
+
+**The obvious approach fails, and the failure is measured.** A tolerance box,
+flagging pairs closer than some threshold in time, location and magnitude, does
+not work, because genuine doublets are physically ordinary in aftershock
+sequences and overlap duplicates in every single dimension. Measured across all
+11,961 pairs within 300 seconds of each other:
+
+| | Duplicate neighbourhood | Genuine pairs |
+|---|---|---|
+| Closest in time | 0.000 s | **0.019 s** |
+| Closest in space | 0.0 m | **0.000 km** |
+
+Genuine pairs get closer in time and closer in space than the duplicate does.
+Both separation gaps are negative, so no threshold in any single dimension, or
+any box built from them, separates the two populations.
+
+**Conjunctive exact agreement does separate them.** Requiring two distinct
+publicids to agree **exactly** on all five of origintime, latitude, longitude,
+magnitude and depth yields:
+
+- exactly **one** matching pair in 61,191 events, the documented one
+- the nearest genuine pair agrees on only **3 of the 5** fields, and differs in
+  origin time by 53 seconds
+
+The margin is therefore wide, and it is wide for a physical reason: a duplicate
+is one solution recorded twice, so it agrees to full float precision everywhere,
+while two distinct earthquakes essentially never do.
+
+Matching on location alone would be wrong. Five genuine pairs agree exactly on
+latitude, longitude and depth while differing in origin time by 50 to 220
+seconds. Those share an operator-assigned hypocentre, which is common; it is the
+conjunction with origin time that discriminates.
+
+**The frozen rule.** Two records are duplicates if they have different
+`publicid` and identical `origintime`, `latitude`, `longitude`, `magnitude` and
+`depth`. Enforced by `assert_no_exact_duplicate_events`, which excludes the one
+documented pair by publicid so a genuinely new duplicate fails the build. That
+exclusion is deliberately narrow and must never be widened to silence a future
+failure.
+
+**Honest limitation.** This rule is calibrated on a single known duplicate.
+With n=1 there is no way to know whether GeoNet could emit a near-duplicate that
+differs in the last decimal place, which an exact rule would miss. The rule is
+therefore deliberately conservative in the safe direction: it will never eat a
+genuine doublet, and it may miss an inexact duplicate. To let the sample grow,
+`report_near_duplicate_events` warns rather than fails on pairs agreeing on four
+of the five fields, so candidates surface for human judgement without crying
+wolf. If a second duplicate is ever found, this rule gets revisited with two
+data points instead of one.
 
 ---
 

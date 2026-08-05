@@ -61,7 +61,28 @@ correctly named, correctly typed forecast file that is quietly wrong.
 
 ---
 
-## 3. Turn D4a from a record into a rule
+## 3. Turn D4a from a record into a rule: DONE
+
+Settled and frozen. The measurement is in
+`scripts/measurements/duplicate_tolerance.py` and the reasoning is in
+`DECISIONS.md` section D4a.
+
+The short version: a tolerance based rule does **not** work. Genuine doublets
+overlap the known duplicate in every single dimension, getting closer in time
+(0.019 s) and closer in space (0.000 km) than it does, so both separation gaps
+are negative and no threshold separates the populations. Conjunctive exact
+agreement on origintime, latitude, longitude, magnitude and depth does separate
+them: one match in 61,191 events, with the nearest genuine pair agreeing on only
+3 of the 5 fields.
+
+Implemented as `assert_no_exact_duplicate_events`, proven to fail by removing
+the exclusion and watching it go red, then restored. A companion
+`report_near_duplicate_events` warns rather than fails, so the sample can grow
+against the n=1 calibration limitation.
+
+---
+
+## 3b. Original notes on this item, kept for context
 
 Documenting the `2018p914028` and `2018p914029` pair catches that pair. It does
 not catch the next one, and duplicates feed straight into the event count the
