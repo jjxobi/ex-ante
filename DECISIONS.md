@@ -318,6 +318,22 @@ latitude, longitude and depth while differing in origin time by 50 to 220
 seconds. Those share an operator-assigned hypocentre, which is common; it is the
 conjunction with origin time that discriminates.
 
+**Tolerances are the wrong tool for this mechanism, not merely a tool that
+failed to work here.** A duplicate is one solution ingested twice, so it agrees
+to full float precision *by construction*. Two records differing in the last
+decimal place are not a duplicate at all: they are a re-solution of the same
+event, which is revision, and revision is governed by D7. Reaching for a
+tolerance conflates two different mechanisms. Exactness is not a conservative
+approximation of the right rule; it is the right rule.
+
+**Cross-reference to D4.** The five genuine pairs that agree exactly on
+latitude, longitude and depth while differing by minutes in origin time are the
+operator-assigned depth phenomenon of D4 appearing in a second guise. There, a
+poorly constrained solution is pinned to a conventional depth such as 33 km;
+here, a whole hypocentre is pinned and reused. Both are cases where exact
+agreement in a field signals an assigned value rather than a measured one, which
+is precisely why no single field can carry the discrimination alone.
+
 **The frozen rule.** Two records are duplicates if they have different
 `publicid` and identical `origintime`, `latitude`, `longitude`, `magnitude` and
 `depth`. Enforced by `assert_no_exact_duplicate_events`, which excludes the one
@@ -508,3 +524,136 @@ convention removes a whole class of off-by-one at ingest boundaries.
 **The comparison is instant based, never string based.** Origin times are stored
 as instants. Boundary tests compare instants, never rendered timestamps, because
 rendering is timezone dependent.
+
+---
+
+## D13. Numerical and boundary semantics
+
+Every defect that reached code in Phase 1 originated in the plan rather than the
+implementation, and they clustered here: implicit numeric and boundary
+conventions that produce a plausible answer on one machine. These are pinned
+before Phase 2 code exists.
+
+### D13.1 Magnitude threshold is inclusive, and magnitude is never rounded
+
+**The target set is `magnitude >= 3.0`, inclusive.** Gutenberg-Richter is
+defined as N(>= M), Mc is conventionally an inclusive floor, and pyCSEP's
+magnitude bins are lower-inclusive. An exclusive threshold would sit at odds
+with every convention this project claims kinship with. 57 events in the
+catalogue carry a magnitude of exactly 3.0, so this is a populated boundary, not
+a theoretical one.
+
+**Magnitude is stored as a 64 bit float and compared exactly. It is never
+rounded, and never stored as a fixed-precision decimal.** This was measured
+rather than assumed, and the measurement overturned the obvious choice.
+
+GeoNet does **not** report magnitudes to one decimal place. Across 404,866
+events, only 0.76 percent carry one decimal or fewer; 40 percent carry three
+decimals and 39 percent carry nine, with tails to sixteen. Magnitudes arrive at
+full solver precision.
+
+Rounding to a fixed decimal would therefore not be a representation choice, it
+would be a silent alteration of the target set, promoting events from below the
+threshold into it:
+
+| Rounding | Events promoted into the target set | As a share of it |
+|---|---|---|
+| 1 decimal place | 5,283 | 8.824% |
+| **2 decimal places** | **509** | **0.850%** |
+| 3 decimal places | 24 | 0.040% |
+
+A `DECIMAL(4,2)` column would inflate the event count by 0.85 percent. Event
+count is exactly what the N-test consumes, so that is a systematic upward bias
+roughly five hundred times larger than the single duplicate D4a exists to guard
+against.
+
+**There is no float hazard on this comparison, and the reason is specific.**
+3.0 is exactly representable in IEEE 754 binary64, so `float("3.0") == 3.0` is
+guaranteed true, confirmed by the 57 events that compare exactly equal after
+parsing. The hazard of a value arriving as 2.9999999999999996 arises from
+*arithmetic*, and this pipeline performs no arithmetic on magnitude: it parses a
+decimal literal and compares it. Where arithmetic does occur, on the spatial
+grid, the hazard is real and is handled in D13.2.
+
+### D13.2 Cell assignment is lower-inclusive and computed in integers
+
+**A point belongs to cell `[x, x + 0.1)`**, lower-inclusive and upper-exclusive,
+in both longitude and latitude. This matches `numpy.digitize`, pyCSEP's grid
+convention, and D12's window convention, so cells tile without gap or overlap.
+
+**Assignment is computed in integer decidegrees, never in floating point.**
+Unlike magnitude, this involves real arithmetic on values that are not exactly
+representable: neither 163.6 nor 0.1 has an exact binary64 representation, so
+`floor((174.5 - 163.6) / 0.1)` can land on 108.999999999999986 rather than 109,
+and which one it returns is a property of the platform. This is the same species
+of defect as the timezone fault found in Phase 1.
+
+The rule: multiply coordinates by 10 and round to an integer **once**, at the
+system boundary where data enters, then bin with integer arithmetic thereafter.
+Cell identifiers are integers. Cell bounds are never stored as floats.
+
+**The pyCSEP origin convention must be verified, not assumed.** pyCSEP's
+`CartesianGrid2D` exposes both `origins()` and `midpoints()`, which implies the
+stored coordinate is the lower-left origin with midpoints derived from it. The
+published API documentation does not state this explicitly. Phase 2 must assert
+it with a test that round-trips a known point through pyCSEP's `get_index_of`
+and this project's integer binning and fails if they disagree, so that an offset
+error surfaces as a red test rather than as a forecast quietly shifted by one
+cell.
+
+### D13.3 Gutenberg-Richter estimation
+
+**Estimator: Aki-Utsu maximum likelihood, with the binning correction of half a
+magnitude bin.** Closed form and therefore deterministic, standard in the
+literature, and what a seismologist expects to see. Least squares on the
+cumulative frequency-magnitude distribution is **rejected**: it is known to be
+biased, because the cumulative distribution's points are not independent.
+
+**Weichert (1980) maximum likelihood is the designated successor**, not a
+replacement. It is built for catalogues with varying completeness periods, so if
+the per-cell exposure treatment described in the spec's fitting-window section is
+adopted, Weichert is the natural upgrade. It registers as a separate model
+scored on identical windows, exactly as ETAS does, rather than silently
+replacing the baseline's estimator.
+
+**b is estimated per stratum: one value for shallow, one for deep.** Not global,
+because crustal and intraslab populations commonly differ in b and the two
+strata are already scored separately. Not per cell, because the separable
+forecast representation of D9 shares the magnitude distribution across space by
+design, so a per-cell b is neither representable nor wanted.
+
+**Fitting range: from the stratum's measured Mc upward, with an upper cutoff at
+M5.5.** The upper cutoff exists because counts above it are too sparse on a
+twenty year catalogue to constrain the fit.
+
+**Forecast magnitude distribution: truncated Gutenberg-Richter, bins 0.1 wide,
+Mmax frozen at 8.5.** Mmax barely affects expected counts over a daily window,
+but it defines the bin structure the M-test consumes, so it must be frozen
+rather than left implicit. 8.5 is defensible for a subduction margin.
+
+### D13.4 Expander determinism
+
+The reproducibility claim asserts byte-identical output, which requires five
+things pinned rather than one.
+
+1. **Iteration order is explicit**: sorted by cell identifier, then by magnitude
+   bin. Never dictionary order, never set order, never filesystem order.
+2. **dtype is pinned to float64 explicitly**, never inherited from a platform
+   default.
+3. **Reduction order is fixed.** Floating point addition is not associative, so
+   every sum over cells or bins has a specified order. Normalising bins to the
+   cell rate is a reduction, and it is the one most likely to change silently
+   across a library upgrade.
+4. **The hash covers canonical array bytes, not the file.** Specifically
+   `numpy.ascontiguousarray(arr, dtype="<f8").tobytes()`, little-endian
+   explicit. Parquet embeds writer version and compression metadata, so hashing
+   the file would break the reproducibility test on a pyarrow upgrade while the
+   numbers were untouched, which would discredit the test rather than the data.
+5. **Dependencies are lockfile pinned** for numpy, pyarrow and pyCSEP, because
+   determinism is a claim about a dependency set as much as about this code.
+
+**The property tests are written before the implementation.** Two matter most:
+that expansion is a pure function of committed bytes, and that separable to
+dense round-trips exactly. Both would otherwise be properties of how the code
+happens to be written, which is exactly how the Phase 1 chunking rewrite lost
+the emptiness guarantee that delegation had been providing for free.

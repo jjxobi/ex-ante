@@ -11,7 +11,18 @@ class down rather than starting on model code.
 
 ---
 
-## 1. Numerical and boundary semantics to pin
+## 1. Numerical and boundary semantics: DONE, frozen as D13
+
+All four settled and frozen in `DECISIONS.md` section D13. Threshold
+inclusivity and magnitude representation were decided by measurement rather than
+convention; see `scripts/measurements/threshold_exposure.py`. One item is
+deliberately left open as a Phase 2 assertion rather than an assumption:
+pyCSEP's CartesianGrid2D origin convention must be verified by a test, not
+taken on inference.
+
+---
+
+## 1b. Original notes on this item, kept for context
 
 These are the specific gaps. Each needs an explicit answer in the spec, not a
 convention assumed at the keyboard.
