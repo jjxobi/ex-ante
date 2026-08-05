@@ -1,7 +1,7 @@
 [project]
-name = "eq"
+name = "ex-ante"
 version = "0.1.0"
-description = "Publicly scored New Zealand seismicity forecast"
+description = "Ex Ante: a publicly scored New Zealand earthquake rate forecast"
 requires-python = ">=3.12"
 dependencies = [
     "requests>=2.32",

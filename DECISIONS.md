@@ -1,4 +1,4 @@
-# Frozen Decisions
+# Ex Ante: Frozen Decisions
 
 This file is the constitution of the project. Every value here was fixed before
 the first forecast was published, and none of them change.
