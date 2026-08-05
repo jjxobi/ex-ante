@@ -8,6 +8,10 @@ dependencies = [
     "pyarrow>=17",
     "duckdb>=1.1",
     "pandas>=2.2",
+    # Used by the expander for canonical little-endian byte layout. D13.5
+    # makes determinism a claim about the dependency set as much as about the
+    # code, so this is declared explicitly rather than relied on transitively.
+    "numpy>=1.26",
 ]
 
 [project.optional-dependencies]

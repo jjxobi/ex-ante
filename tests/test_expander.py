@@ -37,6 +37,7 @@ must consciously change here first:
 
 import math
 import os
+import pathlib
 import subprocess
 import sys
 
@@ -72,6 +73,24 @@ def make_separable(cell_ids=None, rates=None, b=1.0, grid_hash="test-hash"):
     }
 
 
+# The cross-process checks build the input inline rather than importing this
+# module, so they depend on nothing but the package under test. Importing a test
+# module from a subprocess would make these tests fail for reasons unrelated to
+# the property being checked.
+SUBPROCESS_SCRIPT = """
+import sys
+sys.path.insert(0, "src")
+from eq import expander
+separable = {
+    "grid_hash": "test-hash",
+    "cell_ids": [1, 2, 3, 4],
+    "b": 1.0,
+    "rates": {1: 0.1, 2: 0.2, 3: 0.30000000000000004, 4: 0.4},
+}
+sys.stdout.write(expander.canonical_bytes(expander.expand(separable)).hex())
+"""
+
+
 def independent_truncated_gr(b, m_min, m_max, width):
     """Deliberately reimplemented from the definition, not imported.
 
@@ -104,16 +123,10 @@ def test_identical_across_processes_with_different_hash_seeds():
     PYTHONHASHSEED randomises string hashing, so anything relying on dict order
     of string keys produces a different answer per process.
     """
-    script = (
-        "import sys; sys.path.insert(0, 'src');"
-        "from eq import expander;"
-        "from tests.test_expander import make_separable;"
-        "sys.stdout.write(expander.canonical_bytes("
-        "expander.expand(make_separable())).hex())"
-    )
+    script = SUBPROCESS_SCRIPT
     outs = []
     for seed in ("0", "1", "12345"):
-        env = dict(os.environ, PYTHONHASHSEED=seed, PYTHONPATH="src" + os.pathsep + ".")
+        env = dict(os.environ, PYTHONHASHSEED=seed, PYTHONPATH="src")
         r = subprocess.run(
             [sys.executable, "-c", script], capture_output=True, text=True, env=env
         )
@@ -139,14 +152,8 @@ def test_output_invariant_under_locale_and_timezone(env_overrides):
     calendar date depending on the session timezone. Nothing in the expander
     should be able to notice the environment at all.
     """
-    script = (
-        "import sys; sys.path.insert(0, 'src');"
-        "from eq import expander;"
-        "from tests.test_expander import make_separable;"
-        "sys.stdout.write(expander.canonical_bytes("
-        "expander.expand(make_separable())).hex())"
-    )
-    base_env = dict(os.environ, PYTHONPATH="src" + os.pathsep + ".")
+    script = SUBPROCESS_SCRIPT
+    base_env = dict(os.environ, PYTHONPATH="src")
     ref = subprocess.run(
         [sys.executable, "-c", script], capture_output=True, text=True, env=base_env
     )
@@ -375,4 +382,36 @@ def test_determinism_holds_for_arbitrary_valid_forecasts(n_cells, b):
     sep = make_separable(cells, rates, b=b)
     assert expander.canonical_bytes(expander.expand(sep)) == expander.canonical_bytes(
         expander.expand(sep)
+    )
+
+
+# ==========================================================================
+# Golden hash regression.
+#
+# This test was written before the expander existed and skipped on a missing
+# reference file, so the check predates the thing it checks. That is consistent
+# with how the rest of this project handles evidence.
+#
+# It hashes canonical array bytes rather than a parquet file, per D13.5. Parquet
+# embeds writer version and compression metadata, so a pyarrow upgrade would
+# break a file-level hash while the numbers were untouched, discrediting the
+# test rather than the data.
+#
+# It deliberately does NOT live behind the pyCSEP import gate. Hashing needs no
+# pyCSEP, and a regression test that only runs on machines with an optional
+# dependency installed is a regression test that mostly does not run.
+# ==========================================================================
+
+GOLDEN = pathlib.Path(__file__).parent / "golden" / "expander-reference.hex"
+
+
+@pytest.mark.skipif(not GOLDEN.exists(), reason="golden reference not generated yet")
+def test_expander_output_matches_committed_golden_hash():
+    dense = expander.expand(make_separable())
+    got = expander.canonical_bytes(dense).hex()
+    want = GOLDEN.read_text(encoding="utf-8").strip()
+    assert got == want, (
+        "expander output changed against the committed golden reference. If "
+        "this change is intended, regenerate the golden file in the same commit "
+        "and say why in the message."
     )

@@ -115,32 +115,3 @@ def test_event_above_mmax_is_counted_and_reported_not_dropped_or_raised():
     assert result.in_range is False
     assert result.reported is True
     assert result.bin_index is None
-
-
-# --------------------------------------------------------------------------
-# Golden hash regression
-# --------------------------------------------------------------------------
-
-@pytest.mark.skipif(not GOLDEN.exists(), reason="golden reference not generated yet")
-def test_expander_output_matches_committed_golden_hash():
-    """Written before the implementation, generated with it.
-
-    This test predates the expander in git history on purpose, which is
-    consistent with how the rest of this project handles evidence: the check
-    exists before the thing it checks.
-
-    It hashes canonical array bytes rather than a parquet file, per D13.5. A
-    pyarrow upgrade changes file metadata while leaving the numbers untouched,
-    and a file-level hash would fail for a reason having nothing to do with
-    reproducibility, discrediting the test rather than the data.
-    """
-    from tests.test_expander import make_separable
-
-    dense = expander.expand(make_separable())
-    got = expander.canonical_bytes(dense).hex()
-    want = GOLDEN.read_text(encoding="utf-8").strip()
-    assert got == want, (
-        "expander output changed against the committed golden reference. "
-        "If this change is intended, regenerate the golden file in the same "
-        "commit and say why in the message."
-    )

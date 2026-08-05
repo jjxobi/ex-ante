@@ -16,9 +16,6 @@
 # Removing an entry is part of the commit that makes it run. Adding one needs
 # a reason stated here.
 
-# Phase 2 has not built the expander yet. These modules define its contract.
-tests/test_expander.py
-
 # Also needs pyCSEP, which is not installed locally. Scoring runs on Linux CI
 # per the operational notes in the design spec, so this is expected to keep
 # skipping on Windows development machines even after Phase 2 lands.
