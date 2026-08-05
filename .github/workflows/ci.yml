@@ -32,13 +32,19 @@ jobs:
         run: python -m pytest -v
 
       - name: Ingest a recent catalogue slice
+        # The output filename must be date shaped. stg_quakes selects the
+        # newest snapshot by lexical maximum over a catalogue-????-??-??
+        # pattern, and a name like catalogue-ci.parquet would both fall outside
+        # that pattern and, under a looser one, sort after every real date
+        # because 'c' sorts after '2'.
         run: |
           START=$(date -u -d '30 days ago' +%Y-%m-%d)
           END=$(date -u -d 'tomorrow' +%Y-%m-%d)
+          TODAY=$(date -u +%Y-%m-%d)
           python -m eq.cli range \
             --start "$START" --end "$END" \
             --min-magnitude 3.0 \
-            --out data/snapshots/catalogue-ci.parquet
+            --out "data/snapshots/catalogue-${TODAY}.parquet"
 
       - name: dbt build
         working-directory: dbt

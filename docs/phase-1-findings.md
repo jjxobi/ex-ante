@@ -137,9 +137,10 @@ wrong. Now `nulls last`.
 - The freshness test depends on the live GeoNet service returning a recent
   event. This is deliberate, since the test exists to detect a stalled ingest,
   which a fixture cannot show. It does mean the build is not hermetic.
-- Withdrawal is not modelled. Because every snapshot is unioned, an event GeoNet
-  withdraws never leaves `stg_quakes`, even though the diff format has a
-  `withdrawn` change kind.
+- Withdrawal is now modelled. It was not, at the end of Phase 1: every snapshot
+  was unioned, so an event GeoNet withdrew never left `stg_quakes`. The first
+  real snapshot diff measured the rate at roughly one per day, on reviewed
+  events, so the staging model now reads only the newest snapshot. See D4b.
 - Region membership and depth stratum are deliberately absent. They depend on
   the frozen collection region and the fitted depth boundary that Phase 2
   produces.

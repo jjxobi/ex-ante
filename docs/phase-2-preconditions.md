@@ -127,6 +127,8 @@ not separate cleanly, say so publicly rather than picking a number.
 - The UTC timezone pin lives in `dbt/profiles.yml`, not in the database file, so
   a client opening `data/eq.duckdb` directly gets local time. Consider pinning
   inside the database or moving derived dates upstream.
-- Withdrawal is not modelled. Because every snapshot is unioned, an event GeoNet
-  withdraws never leaves `stg_quakes`, though the diff format has a `withdrawn`
-  change kind.
+- Withdrawal: RESOLVED. Measured at roughly one per day on the first real
+  snapshot diff, including a `confirmed` and `manual` event, so it was not
+  confined to unreviewed automatic solutions. The staging model now reads only
+  the newest snapshot, with a withdrawal count guard because a partial pull and
+  a genuine withdrawal are indistinguishable from outside. Frozen as D4b.
