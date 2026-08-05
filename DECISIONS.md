@@ -706,8 +706,37 @@ its own line on the scoreboard.
 
 ### D13.5 Expander determinism
 
+**Determinism is bit-exact. Conservation is not.** These are different claims
+and conflating them produces a test that fails at 3am for no reason.
+
+- **Determinism**: the same input bytes produce the same output bytes, always,
+  with no tolerance whatsoever.
+- **Conservation**: rate totals agree within a **relative tolerance of 1e-12**.
+
+That tolerance is measured, not chosen. Across b from 0.60 to 1.40 and every
+combination of Mmin in {2.5, 3.0, 3.5, 4.0} and Mmax in {7.5, 8.0, 8.5, 9.0},
+the worst deviation of the summed bin probabilities from 1.0 is **1.110e-16**,
+which is exactly half of float64 machine epsilon, or one unit in the last place.
+That is the floor; it cannot be improved. 1e-12 therefore carries roughly 9,000
+times headroom on a per-cell check. For the global total over 4,100 cells and 55
+bins, pairwise summation bounds the accumulated error near 4e-15, leaving about
+250 times headroom. Both are comfortable, and neither is close.
+
+**A zero-rate cell still appears in the dense output, filled with zeros.** The
+dense array is always exactly `n_cells * n_magnitude_bins`, unconditionally, with
+no exceptions for empty cells. A cell that vanishes from the output is the Phase
+1 chunking failure in another dimension: a correctly shaped result that quietly
+lost rows.
+
+**Normalisation uses the closed-form truncated Gutenberg-Richter expression, not
+division by a computed sum.** Measured, the two are numerically indistinguishable
+on non-empty cells, both bottoming out at 1.110e-16. They differ entirely on the
+empty case: closed form multiplied by a zero rate yields clean zeros with no NaN,
+while dividing weights by their own sum raises `ZeroDivisionError` when that sum
+is zero. The closed form removes the degenerate branch rather than guarding it.
+
 The reproducibility claim asserts byte-identical output, which requires five
-things pinned rather than one.
+further things pinned rather than one.
 
 1. **Iteration order is explicit**: sorted by cell identifier, then by magnitude
    bin. Never dictionary order, never set order, never filesystem order.
