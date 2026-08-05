@@ -137,6 +137,8 @@ dropped.
 **Frozen means hashed.** `region/grid.parquet` is generated once and its
 SHA-256 is recorded here. Every component asserts the hash before running.
 
+SHA-256: `14b2e0b854b5ae89771ad3346204e801f1f32580fd9a09481b9b6f6fe9cd4e44`
+
 ---
 
 ## D2. Magnitude threshold: M 3.0 and above

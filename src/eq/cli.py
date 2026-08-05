@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from datetime import date, datetime, timezone
 
-from eq import ingest, paths, revisions
+from eq import ingest, paths, region, revisions
 
 
 def _as_date(text: str) -> date:
@@ -27,6 +27,11 @@ def main(argv: list[str] | None = None) -> int:
 
     dff = sub.add_parser("diff", help="diff the two newest snapshots into a revision record")
     dff.add_argument("--date", type=_as_date, default=None)
+
+    sub.add_parser(
+        "region-build",
+        help="regenerate the frozen grid and depth boundary (run once; outputs are committed)",
+    )
 
     args = parser.parse_args(argv)
 
@@ -53,6 +58,14 @@ def main(argv: list[str] | None = None) -> int:
         destination = paths.DATA_DIR / "revisions" / f"revisions-{observed_at.isoformat()}.parquet"
         written = revisions.write_daily_diff(previous, current, destination, observed_at)
         print(f"wrote {written} revision rows to {destination}")
+        return 0
+
+    if args.command == "region-build":
+        result = region.build_and_write()
+        print(
+            f"wrote {result['grid_cells']} grid cells across {result['region_cells']} "
+            f"region cells, hash {result['grid_hash']}"
+        )
         return 0
 
     return 2

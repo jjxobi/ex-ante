@@ -1,0 +1,33 @@
+{
+  "n_free_depth_events": 32333,
+  "silverman_bandwidth": 0.060738363446264626,
+  "fitted_boundary_km": 41.114972110452214,
+  "frozen_boundary_km": 41,
+  "sensitivity_curve": [
+    {
+      "bandwidth_multiplier": 0.7,
+      "bandwidth": 0.04251685441238524,
+      "boundary_km": 38.72576449216173
+    },
+    {
+      "bandwidth_multiplier": 0.85,
+      "bandwidth": 0.05162760892932493,
+      "boundary_km": 39.994474976109736
+    },
+    {
+      "bandwidth_multiplier": 1.0,
+      "bandwidth": 0.060738363446264626,
+      "boundary_km": 41.114972110452214
+    },
+    {
+      "bandwidth_multiplier": 1.2,
+      "bandwidth": 0.07288603613551754,
+      "boundary_km": 42.85485203974397
+    },
+    {
+      "bandwidth_multiplier": 1.5,
+      "bandwidth": 0.09110754516939694,
+      "boundary_km": 45.28975799036209
+    }
+  ]
+}

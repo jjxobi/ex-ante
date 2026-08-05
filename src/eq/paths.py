@@ -26,6 +26,11 @@ SNAPSHOT_DIR = DATA_DIR / "snapshots"
 EVALUATION_DIR = DATA_DIR / "evaluation"
 REVISION_DIR = DATA_DIR / "revisions"
 
+# Not under data/: the frozen grid and depth boundary are committed artifacts,
+# not raw catalogue data, and data/ is gitignored while region/ is not.
+REGION_DIR = REPO_ROOT / "region"
+MEASUREMENTS_DIR = REPO_ROOT / "scripts" / "measurements"
+
 
 def ensure_dirs() -> None:
     """Create every data directory this project writes to."""
