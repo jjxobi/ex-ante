@@ -1,0 +1,167 @@
+{
+  "method": "leave-one-out Poisson log-likelihood cross validation, per DECISIONS.md D13.4a",
+  "candidates_km": [
+    1.0,
+    2.0,
+    3.0,
+    6.0,
+    10.0,
+    15.0,
+    20.0,
+    25.0,
+    30.0,
+    40.0,
+    55.0,
+    75.0,
+    100.0,
+    130.0
+  ],
+  "hand_picked_bandwidth_km": 30.0,
+  "holdout_start": "2026-02-03T01:13:29.352000+00:00",
+  "window_days": 7,
+  "n_windows_held_out": 26,
+  "strata": {
+    "shallow": {
+      "stratum": "shallow",
+      "n_events": 5708,
+      "fit_start": "2019-01-01T00:00:00+00:00",
+      "holdout_start": "2026-02-03T01:13:29.352000+00:00",
+      "selected_bandwidth_km": 5.333333333333334,
+      "selected_log_likelihood": 12680.93691713446,
+      "coarse_best_bandwidth_km": 6.0,
+      "refined_search_range_km": [
+        3.0,
+        10.0
+      ],
+      "sensitivity_curve": [
+        {
+          "bandwidth_km": 1.0,
+          "loo_log_likelihood": 12500.325579094166
+        },
+        {
+          "bandwidth_km": 2.0,
+          "loo_log_likelihood": 10814.083581976403
+        },
+        {
+          "bandwidth_km": 3.0,
+          "loo_log_likelihood": 11838.18513095589
+        },
+        {
+          "bandwidth_km": 6.0,
+          "loo_log_likelihood": 12658.834491873284
+        },
+        {
+          "bandwidth_km": 10.0,
+          "loo_log_likelihood": 11993.308960579143
+        },
+        {
+          "bandwidth_km": 15.0,
+          "loo_log_likelihood": 11014.447661897602
+        },
+        {
+          "bandwidth_km": 20.0,
+          "loo_log_likelihood": 10177.739529554668
+        },
+        {
+          "bandwidth_km": 25.0,
+          "loo_log_likelihood": 9486.443827455978
+        },
+        {
+          "bandwidth_km": 30.0,
+          "loo_log_likelihood": 8927.115670583997
+        },
+        {
+          "bandwidth_km": 40.0,
+          "loo_log_likelihood": 8098.745130343254
+        },
+        {
+          "bandwidth_km": 55.0,
+          "loo_log_likelihood": 7218.032061051074
+        },
+        {
+          "bandwidth_km": 75.0,
+          "loo_log_likelihood": 6319.192854482544
+        },
+        {
+          "bandwidth_km": 100.0,
+          "loo_log_likelihood": 5469.547522423994
+        },
+        {
+          "bandwidth_km": 130.0,
+          "loo_log_likelihood": 4710.839066998852
+        }
+      ]
+    },
+    "deep": {
+      "stratum": "deep",
+      "n_events": 2980,
+      "fit_start": "2019-01-01T00:00:00+00:00",
+      "holdout_start": "2026-02-03T01:13:29.352000+00:00",
+      "selected_bandwidth_km": 7.083333333333333,
+      "selected_log_likelihood": 3613.064919201398,
+      "coarse_best_bandwidth_km": 6.0,
+      "refined_search_range_km": [
+        3.0,
+        10.0
+      ],
+      "sensitivity_curve": [
+        {
+          "bandwidth_km": 1.0,
+          "loo_log_likelihood": 2946.754590511417
+        },
+        {
+          "bandwidth_km": 2.0,
+          "loo_log_likelihood": 2108.119724327119
+        },
+        {
+          "bandwidth_km": 3.0,
+          "loo_log_likelihood": 2826.052374203047
+        },
+        {
+          "bandwidth_km": 6.0,
+          "loo_log_likelihood": 3583.8398105018855
+        },
+        {
+          "bandwidth_km": 10.0,
+          "loo_log_likelihood": 3523.945077601882
+        },
+        {
+          "bandwidth_km": 15.0,
+          "loo_log_likelihood": 3248.0879079797037
+        },
+        {
+          "bandwidth_km": 20.0,
+          "loo_log_likelihood": 2968.4249636487893
+        },
+        {
+          "bandwidth_km": 25.0,
+          "loo_log_likelihood": 2713.0426826909065
+        },
+        {
+          "bandwidth_km": 30.0,
+          "loo_log_likelihood": 2485.8911507571256
+        },
+        {
+          "bandwidth_km": 40.0,
+          "loo_log_likelihood": 2094.276042119503
+        },
+        {
+          "bandwidth_km": 55.0,
+          "loo_log_likelihood": 1629.9126375284104
+        },
+        {
+          "bandwidth_km": 75.0,
+          "loo_log_likelihood": 1173.2978149521389
+        },
+        {
+          "bandwidth_km": 100.0,
+          "loo_log_likelihood": 760.0815177386903
+        },
+        {
+          "bandwidth_km": 130.0,
+          "loo_log_likelihood": 403.6171259103619
+        }
+      ]
+    }
+  }
+}

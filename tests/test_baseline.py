@@ -396,3 +396,157 @@ def test_strata_are_fit_independently_with_their_own_b(fitted_shallow, fitted_de
 def test_invalid_stratum_is_rejected(catalogue):
     with pytest.raises(ValueError):
         baseline.fit(catalogue, "medium")
+
+
+# ==========================================================================
+# Kernel bandwidth: selected by rule (D13.4a), not by hand
+# ==========================================================================
+
+def test_fit_uses_the_frozen_per_stratum_bandwidth_by_default(fitted_shallow, fitted_deep):
+    """No kernel_sigma_km override, so fit() must have read
+    region/kernel_bandwidth.json rather than falling back to any hard-coded
+    default (there is none left to fall back to)."""
+    import json
+
+    data = json.loads(baseline.KERNEL_BANDWIDTH_PATH.read_text(encoding="utf-8"))
+    assert fitted_shallow.kernel_sigma_km == pytest.approx(
+        data["strata"]["shallow"]["selected_bandwidth_km"]
+    )
+    assert fitted_deep.kernel_sigma_km == pytest.approx(
+        data["strata"]["deep"]["selected_bandwidth_km"]
+    )
+
+
+def test_frozen_bandwidth_is_not_the_hand_picked_value(fitted_shallow):
+    """The whole point of D13.4a: the operative bandwidth must not simply be
+    the retired hand-picked 30 km."""
+    assert fitted_shallow.kernel_sigma_km != baseline.HAND_PICKED_KERNEL_SIGMA_KM
+
+
+def test_fit_raises_a_clear_error_when_the_bandwidth_file_is_missing(catalogue, monkeypatch, tmp_path):
+    monkeypatch.setattr(baseline, "KERNEL_BANDWIDTH_PATH", tmp_path / "does-not-exist.json")
+    with pytest.raises(baseline.KernelBandwidthNotBuiltError):
+        baseline.fit(catalogue, "shallow")
+
+
+def test_explicit_kernel_sigma_km_still_overrides_the_frozen_value(catalogue):
+    fitted = baseline.fit(catalogue, "shallow", kernel_sigma_km=42.0)
+    assert fitted.kernel_sigma_km == 42.0
+
+
+# --------------------------------------------------------------------------
+# fit_kernel_bandwidth: the leave-one-out selection mechanism itself
+# --------------------------------------------------------------------------
+
+def test_loo_selection_prefers_an_interior_bandwidth_not_the_search_edges(catalogue):
+    """Mirrors the concern D3 records about the rejected Otsu criterion: a
+    selection rule that always lands on whichever edge the search range
+    happens to have has not found a real optimum. This uses a small explicit
+    candidate set and a real holdout boundary so the check runs quickly.
+    """
+    holdout_start = datetime(2026, 2, 3, tzinfo=timezone.utc)
+    result = baseline.fit_kernel_bandwidth(
+        catalogue,
+        "shallow",
+        holdout_start=holdout_start,
+        candidates_km=(3.0, 6.0, 10.0, 20.0, 40.0),
+    )
+    candidates = (3.0, 6.0, 10.0, 20.0, 40.0)
+    assert result["coarse_best_bandwidth_km"] not in (min(candidates), max(candidates)), (
+        "selection landed on a search-range edge rather than an interior "
+        "optimum; see D3's rejected Otsu criterion for why that is a "
+        "search-range artifact, not a real answer"
+    )
+
+
+def test_loo_selection_holdout_excludes_events_in_the_held_out_span(catalogue):
+    """The events at or after holdout_start must not influence which
+    bandwidth wins: this is what makes the selection never touch scored
+    windows structurally, not merely by convention. Checked by comparing
+    the event count used for selection against a manual count of events
+    strictly before the holdout boundary.
+    """
+    holdout_start = datetime(2026, 2, 3, tzinfo=timezone.utc)
+    result = baseline.fit_kernel_bandwidth(
+        catalogue, "shallow", holdout_start=holdout_start,
+        candidates_km=(6.0, 30.0),
+    )
+    fit_start_dt = datetime(2019, 1, 1, tzinfo=timezone.utc)
+    manual_count = 0
+    for e in catalogue:
+        if e["origintime"] < fit_start_dt or e["origintime"] >= holdout_start:
+            continue
+        if e["magnitude"] < expander.MMIN:
+            continue
+        if region.stratum_for(e["depth"]) != "shallow":
+            continue
+        if region.cell_id_for(e["longitude"], e["latitude"]) is None:
+            continue
+        manual_count += 1
+    assert result["n_events"] == manual_count
+    assert result["n_events"] < len(
+        [e for e in catalogue if e["origintime"] >= fit_start_dt]
+    ), "holdout did not exclude anything; the guard is not doing anything"
+
+
+def test_loo_selection_raises_on_invalid_stratum(catalogue):
+    with pytest.raises(ValueError):
+        baseline.fit_kernel_bandwidth(catalogue, "medium")
+
+
+def test_sensitivity_curve_has_at_least_seven_points_spanning_the_optimum():
+    """Acceptance criterion: a sensitivity curve recorded to disk, with at
+    least 7 candidate bandwidths spanning well below and well above the
+    selected optimum, in region/boundary.json's own style.
+    """
+    import json
+
+    data = json.loads(baseline.KERNEL_BANDWIDTH_PATH.read_text(encoding="utf-8"))
+    for stratum in ("shallow", "deep"):
+        curve = data["strata"][stratum]["sensitivity_curve"]
+        assert len(curve) >= 7
+        bandwidths = [p["bandwidth_km"] for p in curve]
+        selected = data["strata"][stratum]["selected_bandwidth_km"]
+        assert min(bandwidths) < selected * 0.5, "curve does not extend well below the optimum"
+        assert max(bandwidths) > selected * 2.0, "curve does not extend well above the optimum"
+        # Monotonically increasing bandwidths and finite log-likelihoods:
+        # a curve that is not actually a curve would defeat the point of
+        # recording one.
+        assert bandwidths == sorted(bandwidths)
+        for point in curve:
+            assert math.isfinite(point["loo_log_likelihood"])
+
+
+def test_kernel_bandwidth_json_records_the_holdout_and_the_method():
+    """The committed artifact has to be self-documenting about what it did
+    and why it does not touch scored windows, not just carry a number.
+    """
+    import json
+
+    data = json.loads(baseline.KERNEL_BANDWIDTH_PATH.read_text(encoding="utf-8"))
+    assert "leave-one-out" in data["method"].lower()
+    assert data["holdout_start"]
+    assert data["n_windows_held_out"] == 26
+    assert data["hand_picked_bandwidth_km"] == baseline.HAND_PICKED_KERNEL_SIGMA_KM
+
+
+# --------------------------------------------------------------------------
+# The rate level is bandwidth invariant: changing the kernel must not move
+# the total expected count, only its spatial distribution.
+# --------------------------------------------------------------------------
+
+def test_total_expected_count_is_identical_across_bandwidths(catalogue):
+    """Each event's kernel is normalised to sum to exactly one across the
+    grid regardless of bandwidth (see the module docstring), so the total
+    forecast count over a window must not move when only kernel_sigma_km
+    changes. This is what makes the bandwidth selection here structurally
+    unable to touch the rate level or the 32.7% over-prediction D13.4a
+    preserves on purpose: nothing about this project's total counts could
+    have been targeted by tuning the kernel, even by accident.
+    """
+    narrow = baseline.fit(catalogue, "shallow", kernel_sigma_km=5.0)
+    wide = baseline.fit(catalogue, "shallow", kernel_sigma_km=100.0)
+    start, end = date(2026, 1, 5), date(2026, 1, 12)
+    total_narrow = sum(baseline.forecast(narrow, start, end)["rates"].values())
+    total_wide = sum(baseline.forecast(wide, start, end)["rates"].values())
+    assert total_narrow == pytest.approx(total_wide, rel=1e-9)
