@@ -583,23 +583,69 @@ convention, and D12's window convention, so cells tile without gap or overlap.
 
 **Assignment is computed in integer decidegrees, never in floating point.**
 Unlike magnitude, this involves real arithmetic on values that are not exactly
-representable: neither 163.6 nor 0.1 has an exact binary64 representation, so
-`floor((174.5 - 163.6) / 0.1)` can land on 108.999999999999986 rather than 109,
-and which one it returns is a property of the platform. This is the same species
-of defect as the timezone fault found in Phase 1.
+representable: neither 163.6 nor 0.1 has an exact binary64 representation.
+
+The hazard was measured against this project's actual coordinate ranges rather
+than asserted, because the example usually quoted for it is not in fact an
+example. `(174.5 - 163.6) / 0.1` evaluates to 109.00000000000006, which floors
+to 109, the correct answer. An earlier draft of this section claimed it floored
+to 108.999999999999986. That claim was wrong and is corrected here rather than
+quietly deleted.
+
+The real result, from `scripts/measurements/grid_edge_hazard.py`, sweeping every
+cell edge in the region:
+
+| Axis | Edges swept | Disagreements between naive float and integer |
+|---|---|---|
+| Longitude, 163.6 to 183.0 | 195 | **39** |
+| Latitude, -49.2 to -32.3 | 171 | **0** |
+
+Every disagreement is an offset of exactly one cell, and they recur on a regular
+0.5 degree beat beginning at 163.7, 164.2, 164.7. A naive implementation would
+therefore place part of the forecast in the wrong cell, silently.
+
+The zero on the latitude axis is the more instructive number. The same
+arithmetic, over a comparable range, produces no disagreement at all. Whether
+the hazard bites depends on the origin and the coordinate, so it cannot be
+reasoned about case by case; it has to be eliminated structurally. This is the
+same species of defect as the timezone fault found in Phase 1.
 
 The rule: multiply coordinates by 10 and round to an integer **once**, at the
 system boundary where data enters, then bin with integer arithmetic thereafter.
 Cell identifiers are integers. Cell bounds are never stored as floats.
 
-**The pyCSEP origin convention must be verified, not assumed.** pyCSEP's
-`CartesianGrid2D` exposes both `origins()` and `midpoints()`, which implies the
-stored coordinate is the lower-left origin with midpoints derived from it. The
-published API documentation does not state this explicitly. Phase 2 must assert
-it with a test that round-trips a known point through pyCSEP's `get_index_of`
-and this project's integer binning and fails if they disagree, so that an offset
-error surfaces as a red test rather than as a forecast quietly shifted by one
-cell.
+**pyCSEP's conventions, confirmed from source rather than inferred.**
+
+- **Origin is the lower-left corner.** `CartesianGrid2D` sets
+  `bounds = column_stack((orgs, orgs + dh))`, and `to_dict` serialises
+  `poly.origin` as the cell coordinate. Midpoints are derived from origins, not
+  the other way round. This matches the convention assumed here, so no offset
+  correction is needed.
+- **Binning is lower-inclusive and upper-exclusive**, stated in the `bin1d_vec`
+  docstring. This matches D13.2 and D12 exactly.
+- **pyCSEP reaches that result by epsilon nudging, not integer arithmetic.**
+  It computes `floor((p - a0 + p_tol + a0_tol) / (h - h_tol))`, inflating the
+  numerator and shrinking the denominator so a point on an edge lands on the
+  integer rather than a hair below. At this project's coordinates that tolerance
+  is about 3.6e-14 degrees, roughly four nanometres, which is far below GeoNet's
+  reported precision. It therefore cannot over-correct on real data, and the
+  integer path here and pyCSEP's float path will agree.
+
+That pyCSEP carries dedicated tolerance machinery for exactly this problem is
+independent evidence that the class of bug is live rather than theoretical.
+
+**Two preconditions that come with using it.** `bin1d_vec` infers spacing as
+`bins[1] - bins[0]` and assumes it holds throughout, so a variable grid would
+break silently. This project's grid is uniform, so the assumption holds, but it
+must not be relaxed. Its docstring also warns that the default tolerance assumes
+the points have not been through floating point operations since loading. The
+integer path here satisfies that, so the default tolerance is correct for this
+project.
+
+**The round-trip test has a specific target.** Phase 2 asserts agreement between
+pyCSEP's `get_index_of` and this project's integer binning **on points placed
+exactly on cell edges**, since that is the only place the two mechanisms can
+diverge. A test using cell interiors would pass while proving nothing.
 
 ### D13.3 Gutenberg-Richter estimation
 
@@ -631,7 +677,34 @@ Mmax frozen at 8.5.** Mmax barely affects expected counts over a daily window,
 but it defines the bin structure the M-test consumes, so it must be frozen
 rather than left implicit. 8.5 is defensible for a subduction margin.
 
-### D13.4 Expander determinism
+### D13.4 Events outside the forecast range
+
+**An event above the top magnitude bin is counted and reported separately. It is
+never silently dropped, and it never crashes the scorer.**
+
+This is a real failure mode, not a hypothetical one. pyCSEP's `bin1d_vec`
+returns -1 for any value above the last bin edge, and `get_index_of` raises
+`ValueError` on -1. With Mmax frozen at 8.5 in D13.3 and `right_continuous` left
+at its default of `False`, a single M8.5 or greater earthquake would not merely
+fall outside the forecast, it would **crash the scoring run**. On a subduction
+margin, over a project designed to accumulate evidence for years, that is a
+matter of time rather than of chance.
+
+**The decision: keep the top bin closed, and handle out-of-range events
+explicitly.** The alternative, setting `right_continuous=True` so the top bin
+absorbs the tail, is rejected. A truncated Gutenberg-Richter assigns that bin a
+near-zero probability, so an event landing there would be folded into a bin
+whose forecast probability was never meaningful, and the M-test would punish it
+for a number nobody intended to publish.
+
+Explicit handling is also **consistent with the rule already made for space**.
+D1 requires events outside the collection region to be counted and reported
+separately rather than dropped, precisely because silently discarding observed
+events would flatter the forecast. The magnitude tail gets the same treatment,
+for the same reason. A once-in-decades M8.5 or greater event stays visible as
+its own line on the scoreboard.
+
+### D13.5 Expander determinism
 
 The reproducibility claim asserts byte-identical output, which requires five
 things pinned rather than one.
