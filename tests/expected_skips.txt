@@ -5,18 +5,28 @@
 #
 # Why by node ID rather than by count: "2 skipped" is a number nobody reads.
 # A third skip appearing because an import broke or a fixture vanished looks
-# identical to the two that were intended, and the suite stays green either
+# identical to the ones that were intended, and the suite stays green either
 # way. That is the same silent weakening as an adversarial fixture drifting.
 #
-# The reverse direction is the more useful half. When Phase 2 lands and the
-# expander tests start passing, a silent continued skip becomes a failure
-# rather than a green suite, so nobody can ship an expander whose tests never
-# actually ran.
+# The reverse direction is the more useful half, and it has now fired four
+# times in this project's short history:
+#   - on a deliberate break test, which is what it was written for
+#   - when the expander landed and its tests started running
+#   - when data dependent tests silently skipped on a fresh CI clone, which is
+#     the one that would otherwise have shipped
+#   - when pyCSEP turned out to be installable here after all
+# Each time it turned a green run into a red one that named the cause.
 #
 # Removing an entry is part of the commit that makes it run. Adding one needs
 # a reason stated here.
 
-# Also needs pyCSEP, which is not installed locally. Scoring runs on Linux CI
-# per the operational notes in the design spec, so this is expected to keep
-# skipping on Windows development machines even after Phase 2 lands.
-tests/test_expander_pycsep.py
+# THIS LIST IS DELIBERATELY EMPTY.
+#
+# Every test in this suite is expected to run on every machine. No optional
+# dependency remains: pyCSEP installs on Windows as well as Linux, using
+# pip install --user because the system Python's Scripts directory is not
+# writable, and the tests that once needed bulk local data now read committed
+# fixtures instead.
+#
+# An empty contract is the strongest state this file can hold. Any skip at all
+# now fails the build until someone justifies it here.

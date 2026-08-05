@@ -403,9 +403,24 @@ triggered at least once to prove it alerts.
 ## 10. Operational notes
 
 **pyCSEP dependencies.** pyCSEP 0.8.0 pulls cartopy, obspy, rasterio, shapely
-and pyproj. Reliable on Linux, historically painful on Windows. Scoring runs in
-CI on Linux; local development uses a conda environment, since the primary
-development machine is Windows.
+and pyproj.
+
+This section previously said those were reliable on Linux and historically
+painful on Windows, and concluded that scoring would run only in CI with a
+conda environment for local work. **That was assumed rather than tested, and it
+is wrong.** `pip install --user pycsep` succeeds on Windows and installs
+cartopy 0.25, obspy 1.5 and rasterio 1.4 without incident. The `--user` flag is
+needed only because this machine's system Python has a non-writable Scripts
+directory, which is a local permissions matter rather than anything to do with
+pyCSEP.
+
+The consequence is worth having: the tests that check this project's integer
+cell binning against pyCSEP's own now run everywhere instead of skipping on the
+development machine. Two of them were wrong when first executed, because they
+had been written against an API read from source rather than exercised;
+`CartesianGrid2D.from_origins` requires a numpy array, not a list of tuples.
+That is the argument for installing a dependency rather than reasoning about
+it.
 
 **Commit authorship.** Scheduled workflow commits are authored
 `github-actions[bot]`, human commits `Jesse O'Brien <jesse@jesse-obrien.com>`.

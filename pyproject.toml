@@ -19,6 +19,11 @@ dev = [
     "pytest>=8.3",
     "dbt-duckdb>=1.10",
     "hypothesis>=6.100",
+    # Declared so the pyCSEP agreement tests run in CI rather than skipping.
+    # The design spec previously assumed this was Linux only; it installs on
+    # Windows too, with pip install --user where the system Python's Scripts
+    # directory is not writable.
+    "pycsep>=0.8",
 ]
 
 [project.scripts]

@@ -1,27 +1,27 @@
-"""Group E: agreement with pyCSEP, and the golden-hash regression.
-
-Written before the expander exists, per DECISIONS.md D13.5.
+"""Agreement between this project's integer binning and pyCSEP's own.
 
 pyCSEP reaches lower-inclusive binning by epsilon nudging, computing
 floor((p - a0 + p_tol + a0_tol) / (h - h_tol)). This project reaches it by
 integer decidegrees, per D13.2. The two mechanisms can only disagree exactly on
 a cell edge, so that is the only place worth testing. A version of this test
 using cell interiors would pass while proving nothing.
+
+These tests were written before pyCSEP could be installed here, against an API
+read from source rather than exercised. Two of them were wrong when first run:
+CartesianGrid2D.from_origins needs a numpy array, not a list of tuples. That is
+worth recording, because it is the argument for installing the dependency
+rather than reasoning about it, and it is the same lesson as every other defect
+this project has found.
 """
 
 import math
-import os
-import subprocess
-import sys
-from pathlib import Path
 
+import numpy as np
 import pytest
 
 LON_MIN, LON_MAX = 163.6, 183.0
 LAT_MIN, LAT_MAX = -49.2, -32.3
 DH = 0.1
-
-GOLDEN = Path(__file__).parent / "golden" / "expander-reference.hex"
 
 
 def naive_bin(x, origin, dh=DH):
@@ -68,24 +68,25 @@ def test_integer_binning_agrees_with_pycsep_on_cell_edges():
     An interior-point version of this test passes while proving nothing, which
     is why the points here sit exactly on 0.1 degree boundaries.
     """
-    region = csep_regions.CartesianGrid2D.from_origins(
-        [(lon, LAT_MIN) for lon in [round(LON_MIN + i * DH, 10) for i in range(40)]],
-        dh=DH,
-    )
-    for lon in [round(LON_MIN + i * DH, 10) for i in range(40)]:
+    edges = [round(LON_MIN + i * DH, 10) for i in range(40)]
+    origins = np.array([[lon, LAT_MIN] for lon in edges])
+    region = csep_regions.CartesianGrid2D.from_origins(origins, dh=DH)
+    for lon in edges:
         ours = integer_bin(lon, LON_MIN)
-        theirs = region.get_index_of([lon], [LAT_MIN + DH / 2])[0]
+        theirs = region.get_index_of(np.array([lon]), np.array([LAT_MIN + DH / 2]))[0]
         assert ours == theirs, f"disagreement at exactly {lon}"
 
 
 def test_pycsep_agrees_on_the_39_adversarial_coordinates():
     """The set where a naive implementation would be wrong by one cell."""
     bad = adversarial_longitudes()
-    origins = [(round(LON_MIN + i * DH, 10), LAT_MIN) for i in range(196)]
+    origins = np.array(
+        [[round(LON_MIN + i * DH, 10), LAT_MIN] for i in range(196)]
+    )
     region = csep_regions.CartesianGrid2D.from_origins(origins, dh=DH)
     for lon in bad:
         ours = integer_bin(lon, LON_MIN)
-        theirs = region.get_index_of([lon], [LAT_MIN + DH / 2])[0]
+        theirs = region.get_index_of(np.array([lon]), np.array([LAT_MIN + DH / 2]))[0]
         assert ours == theirs, (
             f"integer binning and pyCSEP disagree at {lon}, "
             f"ours={ours} theirs={theirs}"
@@ -94,7 +95,9 @@ def test_pycsep_agrees_on_the_39_adversarial_coordinates():
 
 def test_pycsep_origin_is_the_lower_left_corner():
     """Confirmed from source, asserted here so a version bump cannot change it."""
-    region = csep_regions.CartesianGrid2D.from_origins([(170.0, -41.0)], dh=DH)
+    region = csep_regions.CartesianGrid2D.from_origins(
+        np.array([[170.0, -41.0]]), dh=DH
+    )
     origin = region.origins()[0]
     assert origin[0] == pytest.approx(170.0)
     assert origin[1] == pytest.approx(-41.0)
@@ -115,3 +118,33 @@ def test_event_above_mmax_is_counted_and_reported_not_dropped_or_raised():
     assert result.in_range is False
     assert result.reported is True
     assert result.bin_index is None
+
+
+def test_pycsep_returns_minus_one_above_the_top_magnitude_bin():
+    """D13.4's premise, demonstrated rather than inferred.
+
+    D13.4 keeps the top magnitude bin closed and handles the tail explicitly,
+    on the grounds that pyCSEP's bin1d_vec returns -1 above the last edge and
+    get_index_of raises ValueError on -1, so an M8.5 or greater event would
+    crash the scorer rather than merely fall outside the forecast.
+
+    That was read out of the source before pyCSEP could be installed here.
+    This runs it.
+    """
+    from csep.utils import calc
+
+    bins = np.arange(expander.MMIN, expander.MMAX, expander.BIN_WIDTH)
+
+    assert calc.bin1d_vec(np.array([3.0]), bins)[0] == 0
+    assert calc.bin1d_vec(np.array([8.4]), bins)[0] == 54
+
+    # The tail. Both land outside, which is exactly the crash risk.
+    assert calc.bin1d_vec(np.array([expander.MMAX]), bins)[0] == -1
+    assert calc.bin1d_vec(np.array([9.0]), bins)[0] == -1
+
+    # And this project's own classifier handles them rather than crashing.
+    for magnitude in (expander.MMAX, 9.0):
+        result = expander.classify_magnitude(magnitude)
+        assert result.in_range is False
+        assert result.reported is True
+        assert result.bin_index is None
