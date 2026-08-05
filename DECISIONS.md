@@ -61,9 +61,34 @@ arc and its extension offshore of East Cape:
 | 180-181, -38 to -37 | 1,151 | M3.0 |
 | 179-180, -37 to -36 | 221 | M2.9 |
 
-**This cut removes 41% of the national M3.0 and above event count.** It is the
-single most consequential decision in the project and it is deliberately
-prominent rather than buried. The catalogue is not complete in those cells, the
+**This cut removes 41% of the national M3.0 and above event count over the
+reference window**, and that qualifier matters. It is the single most
+consequential decision in the project and it is deliberately prominent rather
+than buried.
+
+The 41% figure is exact for 2021 to 2026, the window D1 is defined on. It is
+**not** a stable property of the catalogue. Measured across the whole 2005 to
+2026 snapshot the excluded share is **26.1%**, and by year it ranges from
+**9.8% to 50.9%**:
+
+| Period | Excluded share |
+|---|---|
+| Whole catalogue, 2005 to 2026 | 26.1% |
+| Reference window, 2021 to 2026 | 41.0% |
+| Lowest year (2011) | 9.8% |
+| Highest year (2026 to date) | 50.9% |
+
+Two things drive the drift, in opposite directions. GeoNet's detection in the
+Kermadec region has improved, so the excluded area contributes a growing share
+of recorded events over time. Against that, a large mainland sequence inflates
+the in-region denominator and pushes the excluded share down sharply: the two
+lowest years are 2011 at 9.8% and 2016 at 15.0%, which are the Canterbury and
+Kaikoura sequences.
+
+So the honest statement is that the cut removes between a tenth and a half of
+national recorded seismicity depending on the year, and 41% over the window this
+decision was measured on. Regenerate with
+`scripts/measurements/exclusion_trend.py`. The catalogue is not complete in those cells, the
 incompleteness is not stable over time (Kermadec Mc measured at 3.2, 3.4, 4.3,
 2.7 and 3.1 in 2005, 2010, 2015, 2020 and 2025), and forecasting a magnitude
 threshold below the completeness of the region you are forecasting produces
