@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import math
 import os
+import pathlib
 import random
 import subprocess
 import sys
@@ -31,22 +32,30 @@ from eq import baseline, expander, paths, region, storage
 # Fixtures against the real catalogue
 # --------------------------------------------------------------------------
 
-def _newest_snapshot() -> "os.PathLike":
-    """The newest dated snapshot, never the lexically greatest filename.
-
-    Per D4b's recorded implementation trap: a CI slice named catalogue-ci
-    would sort after a real dated snapshot and silently select the wrong
-    file. Filtering to the dated pattern before taking the max avoids that.
-    """
-    candidates = sorted(paths.SNAPSHOT_DIR.glob("catalogue-????-??-??.parquet"))
-    if not candidates:
-        pytest.skip("no snapshot catalogue present in data/snapshots")
-    return candidates[-1]
+FIXTURE = pathlib.Path(__file__).parent / "fixtures" / "catalogue-fit-window.parquet"
 
 
 @pytest.fixture(scope="module")
 def catalogue() -> list[dict]:
-    return storage.read_parquet(_newest_snapshot())
+    """The committed fit-window catalogue, never a live snapshot.
+
+    These tests used to read whichever snapshot happened to be in
+    data/snapshots, and skipped when there was none. data/ is gitignored by
+    design, per D4b, so on a fresh clone that meant 19 tests silently skipping.
+    CI found exactly that: a green pytest run in which most of this file did
+    nothing. Only the skip-set interlock turned it red.
+
+    So the data is committed instead. It holds every event from 2019-01-01,
+    which is the fitting window frozen in the design spec. Because the baseline
+    discards everything before fit_start anyway, this produces results
+    identical to the full 61,192 event snapshot for every test here, while
+    being 805 KB and present on every machine.
+
+    Verification against the genuinely current catalogue is a separate job and
+    lives in scripts/measurements/baseline_verification.py, which is where a
+    dependency on live data belongs.
+    """
+    return storage.read_parquet(FIXTURE)
 
 
 @pytest.fixture(scope="module")

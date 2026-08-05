@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-from eq import paths, region
+from eq import paths, region, storage
 from test_grid_binning import (
     DH,
     LAT_MAX,
@@ -76,19 +76,64 @@ def test_grid_is_exactly_the_41_region_cells_times_100():
     assert all(count == 100 for count in counts.values())
 
 
-def test_regenerating_the_region_rule_reproduces_the_frozen_41_cells():
-    """The rule that produced the committed grid still produces it today.
+def test_grid_matches_the_committed_completeness_table():
+    """The frozen grid is exactly the cells D1's rule retains.
 
-    This is the D1 defect-recurrence guard: if the cached measurement
-    catalogues or the rule implementation drift, this fails loudly instead of
-    letting the committed grid quietly stop matching what the rule would say.
+    This reads region/mc_by_cell.parquet, the committed per-cell completeness
+    measurement, rather than recomputing from 96.7 MB of raw catalogues that
+    are gitignored and therefore absent on any fresh clone. An earlier version
+    of this test did the latter and failed in CI for that reason.
+
+    Committing the intermediate is better than committing the inputs: it is
+    2.4 KB, a reader can audit the rule against it without downloading
+    anything, and the deeper check that the raw catalogues still reproduce this
+    table lives in scripts/measurements/region_rule_regeneration.py, which is
+    where a dependency on bulk local data belongs.
     """
-    region_cells = region.retained_region_cells()
-    assert len(region_cells) == 41
+    table = storage.read_parquet(paths.REPO_ROOT / "region" / "mc_by_cell.parquet")
+    assert len(table) == 145, "expected 145 one-degree cells with any seismicity"
+
+    retained = {
+        (row["region_cell_lon"], row["region_cell_lat"])
+        for row in table
+        if row["retained"]
+    }
+    assert len(retained) == 41, "D1 freezes the region at 41 cells"
+
     grid_region_cells = {
         (row["region_cell_lon"], row["region_cell_lat"]) for row in region.load_grid()
     }
-    assert region_cells == grid_region_cells
+    assert retained == grid_region_cells
+
+
+def test_the_completeness_table_agrees_with_d1s_stated_rule():
+    """Re-applies D1's rule to the committed table rather than trusting its
+    `retained` column, so a mislabelled row cannot pass unnoticed.
+    """
+    table = storage.read_parquet(paths.REPO_ROOT / "region" / "mc_by_cell.parquet")
+    for row in table:
+        expected = row["mc"] is not None and row["mc"] <= 2.6
+        assert row["retained"] == expected, (
+            f"cell ({row['region_cell_lon']}, {row['region_cell_lat']}) is marked "
+            f"retained={row['retained']} but has n={row['n_events']} mc={row['mc']}"
+        )
+
+
+def test_every_excluded_cell_named_in_decisions_is_excluded_in_the_table():
+    """D1 names 11 measurable cells that fail the completeness test. If the
+    table and the constitution ever disagree, one of them is wrong.
+    """
+    named = {
+        (180, -33), (181, -34), (181, -35), (179, -35), (180, -34), (179, -34),
+        (179, -36), (178, -36), (179, -33), (180, -38), (179, -37),
+    }
+    table = storage.read_parquet(paths.REPO_ROOT / "region" / "mc_by_cell.parquet")
+    retained = {
+        (row["region_cell_lon"], row["region_cell_lat"])
+        for row in table
+        if row["retained"]
+    }
+    assert not (named & retained), "a cell D1 excludes is present in the region"
 
 
 # --------------------------------------------------------------------------
