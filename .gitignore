@@ -18,3 +18,4 @@ dbt/.user.yml
 .venv/
 *.egg-info/
 .superpowers/
+.hypothesis/

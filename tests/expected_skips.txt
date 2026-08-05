@@ -1,0 +1,25 @@
+# The exact set of tests allowed to skip on a full suite run.
+#
+# Enforced by tests/conftest.py, which fails the run if the actual skip set
+# differs in EITHER direction.
+#
+# Why by node ID rather than by count: "2 skipped" is a number nobody reads.
+# A third skip appearing because an import broke or a fixture vanished looks
+# identical to the two that were intended, and the suite stays green either
+# way. That is the same silent weakening as an adversarial fixture drifting.
+#
+# The reverse direction is the more useful half. When Phase 2 lands and the
+# expander tests start passing, a silent continued skip becomes a failure
+# rather than a green suite, so nobody can ship an expander whose tests never
+# actually ran.
+#
+# Removing an entry is part of the commit that makes it run. Adding one needs
+# a reason stated here.
+
+# Phase 2 has not built the expander yet. These modules define its contract.
+tests/test_expander.py
+
+# Also needs pyCSEP, which is not installed locally. Scoring runs on Linux CI
+# per the operational notes in the design spec, so this is expected to keep
+# skipping on Windows development machines even after Phase 2 lands.
+tests/test_expander_pycsep.py

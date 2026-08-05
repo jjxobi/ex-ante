@@ -10,9 +10,16 @@ The measurement lives in scripts/measurements/grid_edge_hazard.py.
 
 import math
 
+# The parameters the adversarial set is a function of. It is NOT a list of 39
+# magic numbers; it is the disagreement set for this origin at this spacing.
+# Change either and the set changes, which is why the parameters are asserted
+# explicitly below rather than left implicit in a hardcoded fixture.
 LON_MIN, LON_MAX = 163.6, 183.0
 LAT_MIN, LAT_MAX = -49.2, -32.3
 DH = 0.1
+
+# The count committed alongside those parameters. Derived, never hand written.
+EXPECTED_LON_DISAGREEMENTS = 39
 
 
 def naive_bin(x, origin, dh=DH):
@@ -33,9 +40,33 @@ def disagreements(lo, hi, origin):
     return [x for x in edges(lo, hi) if naive_bin(x, origin) != integer_bin(x, origin)]
 
 
+def test_derivation_parameters_match_the_frozen_grid():
+    """Assert the inputs, not just the output.
+
+    The adversarial set is a function of the origin and the spacing. If either
+    moved, a hardcoded coordinate fixture would keep passing while guarding
+    coordinates that are no longer adversarial, which is silent weakening in a
+    different costume. This fails at the parameters instead.
+
+    When Phase 2 generates region/grid.parquet, this test also asserts its
+    SHA-256, so the set is provably derived under the grid actually in use.
+    """
+    assert (LON_MIN, LON_MAX) == (163.6, 183.0), (
+        "longitude range changed. The adversarial set must be re-measured with "
+        "scripts/measurements/grid_edge_hazard.py and EXPECTED_LON_DISAGREEMENTS updated."
+    )
+    assert (LAT_MIN, LAT_MAX) == (-49.2, -32.3), "latitude range changed, re-measure"
+    assert DH == 0.1, "cell size changed, and D1 freezes it at 0.1 degrees"
+
+
 def test_longitude_adversarial_set_is_still_what_we_measured():
     bad = disagreements(LON_MIN, LON_MAX, LON_MIN)
-    assert len(bad) == 39, f"expected 39 disagreeing longitude edges, found {len(bad)}"
+    assert len(bad) == EXPECTED_LON_DISAGREEMENTS, (
+        f"expected {EXPECTED_LON_DISAGREEMENTS} disagreeing longitude edges for "
+        f"origin {LON_MIN} at spacing {DH}, found {len(bad)}. Either the "
+        f"parameters moved or float behaviour changed; re-run "
+        f"scripts/measurements/grid_edge_hazard.py before touching this number."
+    )
     assert bad[:3] == [163.7, 164.2, 164.7]
 
 

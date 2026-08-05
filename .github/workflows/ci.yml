@@ -22,6 +22,13 @@ jobs:
           python -m pip install -e ".[dev]"
 
       - name: Unit tests
+        # Derandomised hypothesis, so a property failure found here reproduces
+        # exactly on a developer machine with the same profile. The default
+        # seeds randomly and caches counterexamples in a .hypothesis directory
+        # that CI discards, which would make a CI-only failure unreproducible
+        # in a project whose central claim is reproducibility.
+        env:
+          HYPOTHESIS_PROFILE: ci
         run: python -m pytest -v
 
       - name: Ingest a recent catalogue slice
