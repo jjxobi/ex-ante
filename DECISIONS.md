@@ -821,6 +821,71 @@ events would flatter the forecast. The magnitude tail gets the same treatment,
 for the same reason. A once-in-decades M8.5 or greater event stays visible as
 its own line on the scoreboard.
 
+### D13.4a The smoothing kernel, and a pre-registered expectation
+
+**Written before the tuning was run.** The point of pre-registering is that it
+is worthless afterwards.
+
+**The defect.** The baseline's Gaussian smoothing kernel used a correlation
+length of 30 km, chosen as "roughly the scale of a single New Zealand crustal
+fault zone". That is a hand-picked bandwidth. This project already froze a
+principle against exactly that: D3 rejected hand-picked bandwidths for the depth
+boundary, fixed it with Silverman's rule, and recorded the sensitivity from 0.7x
+to 1.5x. The smoothing kernel is the same defect in a different parameter, and
+it escaped the principle rather than being exempted from it.
+
+So the bandwidth is being set by a rule, not re-tuned by judgement. This is the
+application of a commitment already made, not a reaction to scores.
+
+**What the scores actually showed**, measured across 26 independent weekly
+windows in `scripts/measurements/score_quantile_calibration.py`:
+
+| | Observed | Expected if the forecast were right |
+|---|---|---|
+| S-test rejects at 5% | 14 of 26 | about 1.3 |
+| S-test rejects at 1% | 8 of 26 | about 0.3 |
+
+The scorer was cleared first. A forecast concentrated in one cell, scored
+against events in that same cell, returns a spatial quantile of 1.0, and the
+control pointing elsewhere returns 0.0. Cell ordering round-trips exactly, so
+this is a property of the model rather than of the scoring code.
+
+**The pre-registered expectation.** A rejection rate of 54% against 5% expected
+is a large effect. It is the signature of a kernel that cannot represent
+clustering at all, rather than one set to the wrong width: real seismicity
+clusters at multiple scales and a single-bandwidth Gaussian imposes exactly one.
+
+I therefore expect likelihood-optimised fixed bandwidth to **improve the
+rejection rate without fixing it**, landing somewhere around 30% to 45% at the
+5% level, still far above the 5% a correct forecast would give.
+
+**The decision rule, fixed now.** If the optimised fixed bandwidth still rejects
+on more than 20% of windows at the 5% level, the problem is kernel **form**, not
+kernel width. In that case an adaptive bandwidth, scaled to the distance to the
+k-th nearest neighbour so dense regions stay tight while sparse ones stay
+smooth, is the standard remedy, and it will be registered as a **separate
+model** scored on identical windows. It will not be folded silently into the
+baseline. A baseline that quietly acquires the sophistication of its challengers
+stops being a baseline.
+
+**What is NOT being changed, deliberately.** The baseline over-predicts by
+32.7%: 15.16 expected per week against an observed in-region mean of 11.42 over
+the same 26 windows. **That stands.** A time-invariant Poisson model cannot
+track a non-stationary rate; that is its defining limitation rather than a bug,
+and it is precisely what ETAS exists to beat it on. Choosing a fit period
+because it happened to reproduce recent rates would be a far more direct leak
+than anything about the bandwidth, and it would neuter the comparison this
+project is built around.
+
+The split is the point: one parameter was under-specified and is being fixed by
+a rule that already existed, the other is a genuine model limitation being
+preserved on purpose.
+
+**The fit window start is not a third hand-picked parameter.** 2019 is derived,
+not chosen: it is the earliest year at which every retained cell satisfies the
+Mc 2.6 ceiling, with cell (178, -37) the binding constraint. Measured in
+`scripts/measurements/fit_window.py`.
+
 ### D13.5 Expander determinism
 
 **Determinism is bit-exact. Conservation is not.** These are different claims
