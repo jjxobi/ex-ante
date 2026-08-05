@@ -353,6 +353,96 @@ data points instead of one.
 
 ---
 
+## D4b. Withdrawn events
+
+**GeoNet removes events from the catalogue, and it does so to reviewed events.**
+Measured on the first real snapshot diff, 2026-08-04 against 2026-08-05:
+
+| Change kind | Count in one day |
+|---|---|
+| Revised | 74 |
+| New | 2 |
+| **Withdrawn** | **1** |
+
+Revised fields in that day: magnitude 20, latitude 20, longitude 19, depth 13,
+evaluationstatus 2.
+
+The withdrawn event was `2026p432331`, M3.20, depth 182.6 km, origin time
+2026-06-09. It carried `evaluationstatus = 'confirmed'` and
+`evaluationmode = 'manual'`, so it was **not** an unreviewed automatic solution.
+A human-reviewed event was removed, presumably reclassified as a blast, as noise
+or as a bad solution.
+
+**Why this is larger than D4a, by two orders of magnitude.** A withdrawn event
+left in the catalogue inflates the observed event count exactly as a duplicate
+does, with the same consequence for the N-test. But D4a is a single pair in
+61,191 events and is not recurring, whereas withdrawal runs at roughly one per
+day, which is on the order of 365 phantom events a year.
+
+**Delta ingest is structurally blind to it.** An append-only delta cannot observe
+a deletion, by construction. Detection is only possible by diffing consecutive
+full snapshots, which means the snapshot-diff path is load bearing for
+correctness and not merely the source of the revision curve, as it was
+originally described.
+
+**The current warehouse cannot act on it.** `stg_quakes` unions every snapshot
+file, so an event present in any snapshot remains in the view permanently. The
+diff format already carries a `withdrawn` change kind and the diff detects it
+correctly, but nothing downstream consumes that signal.
+
+### The decision
+
+**The staging model reads only the newest snapshot, not the union of all of
+them.** Withdrawal then takes effect automatically, because an event absent from
+the newest snapshot is absent from the view. The revision history lives in the
+committed diffs, which is where it belongs; the warehouse holds current truth.
+
+**A withdrawal count guard is required, because withdrawal and ingest failure
+look identical.** An event present yesterday and absent today is either a
+genuine withdrawal or a partial pull, and conflating them is the failure mode: a
+truncated ingest would silently present as hundreds of withdrawals and quietly
+delete real events from the catalogue.
+
+The guard: a new snapshot whose withdrawal count against its predecessor exceeds
+a threshold is rejected loudly rather than accepted. The observed rate is one per
+day. The threshold is set at **20 per day**, provisionally, and is explicitly
+undercalibrated: it rests on a single day of observation. It gets revisited once
+the daily diffs have accumulated enough history to characterise the distribution,
+which is one of the things those diffs are for.
+
+This complements rather than replaces the existing protections. Ingest already
+raises on any chunk that parses to zero records, so a wholly failed chunk cannot
+reach the warehouse at all; the guard covers the case of a chunk that returns a
+plausible but incomplete result.
+
+### An implementation trap, recorded before it bites
+
+"Newest snapshot" cannot be implemented as the lexically greatest filename.
+Continuous integration writes `catalogue-ci.parquet`, and `c` sorts after `2`,
+so a naive maximum would select the small CI slice over the real catalogue and
+silently reduce the warehouse to a thirty day window. The selection must filter
+to date-shaped names, or the CI artifact must be renamed to a dated form.
+
+### The frozen evaluation catalogue keeps its phantoms
+
+An event withdrawn after a window's T+45 snapshot was taken means the frozen
+evaluation catalogue contains an event that no longer exists, and the score of
+record was computed against it.
+
+**That score is not recomputed.** D7 freezes the evaluation catalogue precisely
+so that a published number cannot move after the fact, and a frozen catalogue
+that gets silently corrected is not frozen. The alternative would mean every
+published score is provisional forever, which destroys the property the freeze
+exists to create.
+
+Instead, the withdrawal is visible in the committed diffs, so a reader can
+establish exactly which scored windows contain a since-withdrawn event and by how
+much it moved the count. The honest position is that a score of record is the
+score against the catalogue as it stood at T+45, stated as such, rather than a
+claim about ground truth that is revised indefinitely.
+
+---
+
 ## D5. Spatial grid
 
 Cells of 0.1 degree by 0.1 degree. 4,100 cells, being every 0.1 degree cell
