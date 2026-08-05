@@ -1,11 +1,24 @@
 {
-  "method": "leave-one-out Poisson log-likelihood cross validation, per DECISIONS.md D13.4a",
+  "method": "leave-one-out Poisson log-likelihood cross validation on fit-period events only, constrained to bandwidths at or above one grid cell width, per DECISIONS.md D13.4a",
+  "constraint_km": 8.4,
+  "constraint_rationale": "a kernel narrower than the discretisation grid cannot represent sub-cell structure, so the likelihood below this width measures grid alignment rather than spatial scale",
+  "cell_width_east_west_km": 8.4,
+  "cell_width_north_south_km": 11.13,
+  "binding_dimension": "east to west, the smaller of the two",
+  "rejected_unconstrained_optimum_km": {
+    "shallow": 5.333,
+    "deep": 7.083
+  },
+  "rejected_because": "both sit below one cell width, in the region where the likelihood oscillates rather than declining smoothly",
+  "hand_picked_bandwidth_km": 30.0,
+  "holdout_start": "2026-02-03T00:00:00+00:00",
+  "n_windows_held_out": 26,
+  "window_days": 7,
   "candidates_km": [
-    1.0,
-    2.0,
-    3.0,
-    6.0,
+    8.4,
+    9.0,
     10.0,
+    12.0,
     15.0,
     20.0,
     25.0,
@@ -16,43 +29,30 @@
     100.0,
     130.0
   ],
-  "hand_picked_bandwidth_km": 30.0,
-  "holdout_start": "2026-02-03T01:13:29.352000+00:00",
-  "window_days": 7,
-  "n_windows_held_out": 26,
   "strata": {
     "shallow": {
       "stratum": "shallow",
       "n_events": 5708,
-      "fit_start": "2019-01-01T00:00:00+00:00",
-      "holdout_start": "2026-02-03T01:13:29.352000+00:00",
-      "selected_bandwidth_km": 5.333333333333334,
-      "selected_log_likelihood": 12680.93691713446,
-      "coarse_best_bandwidth_km": 6.0,
-      "refined_search_range_km": [
-        3.0,
-        10.0
-      ],
+      "selected_bandwidth_km": 8.4,
+      "selected_log_likelihood": 12309.0705833616,
+      "is_boundary_solution": true,
+      "monotonic_across_feasible_region": true,
       "sensitivity_curve": [
         {
-          "bandwidth_km": 1.0,
-          "loo_log_likelihood": 12500.325579094166
+          "bandwidth_km": 8.4,
+          "loo_log_likelihood": 12309.0705833616
         },
         {
-          "bandwidth_km": 2.0,
-          "loo_log_likelihood": 10814.083581976403
-        },
-        {
-          "bandwidth_km": 3.0,
-          "loo_log_likelihood": 11838.18513095589
-        },
-        {
-          "bandwidth_km": 6.0,
-          "loo_log_likelihood": 12658.834491873284
+          "bandwidth_km": 9.0,
+          "loo_log_likelihood": 12193.64282984038
         },
         {
           "bandwidth_km": 10.0,
           "loo_log_likelihood": 11993.308960579143
+        },
+        {
+          "bandwidth_km": 12.0,
+          "loo_log_likelihood": 11589.349475016917
         },
         {
           "bandwidth_km": 15.0,
@@ -95,35 +95,26 @@
     "deep": {
       "stratum": "deep",
       "n_events": 2980,
-      "fit_start": "2019-01-01T00:00:00+00:00",
-      "holdout_start": "2026-02-03T01:13:29.352000+00:00",
-      "selected_bandwidth_km": 7.083333333333333,
-      "selected_log_likelihood": 3613.064919201398,
-      "coarse_best_bandwidth_km": 6.0,
-      "refined_search_range_km": [
-        3.0,
-        10.0
-      ],
+      "selected_bandwidth_km": 8.4,
+      "selected_log_likelihood": 3591.256863451381,
+      "is_boundary_solution": true,
+      "monotonic_across_feasible_region": true,
       "sensitivity_curve": [
         {
-          "bandwidth_km": 1.0,
-          "loo_log_likelihood": 2946.754590511417
+          "bandwidth_km": 8.4,
+          "loo_log_likelihood": 3591.256863451381
         },
         {
-          "bandwidth_km": 2.0,
-          "loo_log_likelihood": 2108.119724327119
-        },
-        {
-          "bandwidth_km": 3.0,
-          "loo_log_likelihood": 2826.052374203047
-        },
-        {
-          "bandwidth_km": 6.0,
-          "loo_log_likelihood": 3583.8398105018855
+          "bandwidth_km": 9.0,
+          "loo_log_likelihood": 3569.6256809605525
         },
         {
           "bandwidth_km": 10.0,
           "loo_log_likelihood": 3523.945077601882
+        },
+        {
+          "bandwidth_km": 12.0,
+          "loo_log_likelihood": 3417.7693799794506
         },
         {
           "bandwidth_km": 15.0,

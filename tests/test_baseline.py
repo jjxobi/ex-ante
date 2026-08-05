@@ -502,19 +502,79 @@ def test_sensitivity_curve_has_at_least_seven_points_spanning_the_optimum():
     import json
 
     data = json.loads(baseline.KERNEL_BANDWIDTH_PATH.read_text(encoding="utf-8"))
+    constraint = data["constraint_km"]
+
     for stratum in ("shallow", "deep"):
-        curve = data["strata"][stratum]["sensitivity_curve"]
+        entry = data["strata"][stratum]
+        curve = entry["sensitivity_curve"]
         assert len(curve) >= 7
         bandwidths = [p["bandwidth_km"] for p in curve]
-        selected = data["strata"][stratum]["selected_bandwidth_km"]
-        assert min(bandwidths) < selected * 0.5, "curve does not extend well below the optimum"
-        assert max(bandwidths) > selected * 2.0, "curve does not extend well above the optimum"
-        # Monotonically increasing bandwidths and finite log-likelihoods:
-        # a curve that is not actually a curve would defeat the point of
-        # recording one.
+        selected = entry["selected_bandwidth_km"]
+
+        # This test previously required the curve to extend below the optimum.
+        # That assumed an interior optimum, and the optimum is not interior: it
+        # sits exactly on the feasibility boundary, so nothing can lie below it.
+        # Asserting the boundary property is stronger than asserting a span that
+        # cannot exist.
+        assert min(bandwidths) == constraint, "curve must start at the constraint"
+        assert max(bandwidths) > selected * 2.0, "curve does not extend well above"
+
+        if selected == constraint:
+            assert entry["is_boundary_solution"] is True, (
+                "the selected bandwidth equals the constraint but is not "
+                "recorded as a boundary solution"
+            )
+            # A boundary solution is only meaningful if the curve really does
+            # decline away from it across the whole feasible region. A local
+            # dip just inside the boundary would mean the true optimum is
+            # interior and the boundary label is wrong.
+            values = [p["loo_log_likelihood"] for p in curve]
+            assert values == sorted(values, reverse=True), (
+                "claimed a boundary solution, but the likelihood does not "
+                "decline monotonically across the feasible region"
+            )
+        else:
+            assert entry["is_boundary_solution"] is False
+
         assert bandwidths == sorted(bandwidths)
         for point in curve:
             assert math.isfinite(point["loo_log_likelihood"])
+
+
+def test_no_selected_bandwidth_is_finer_than_the_grid():
+    """The constraint that rejected the unconstrained optimum.
+
+    A kernel narrower than the cell it is discretised onto cannot represent
+    sub-cell structure, so a bandwidth below one cell width is measuring grid
+    alignment rather than spatial scale. The unconstrained optimum landed at
+    5.3 and 7.1 km and was rejected for exactly this reason; this stops it
+    coming back.
+    """
+    import json
+
+    data = json.loads(baseline.KERNEL_BANDWIDTH_PATH.read_text(encoding="utf-8"))
+    constraint = data["constraint_km"]
+    for stratum in ("shallow", "deep"):
+        selected = data["strata"][stratum]["selected_bandwidth_km"]
+        assert selected >= constraint, (
+            f"{stratum} bandwidth {selected} km is finer than the {constraint} km "
+            f"grid cell and cannot represent anything"
+        )
+
+
+def test_the_binding_cell_dimension_is_the_smaller_one():
+    """8.4 km is east to west; north to south is 11.13 km.
+
+    For an isotropic kernel the smaller dimension binds, because a kernel wide
+    enough to be representable north to south can still be too narrow east to
+    west. Recorded so that someone re-deriving cell width from latitude, and
+    getting 11.13, can tell 8.4 was a decision rather than an error.
+    """
+    import json
+
+    data = json.loads(baseline.KERNEL_BANDWIDTH_PATH.read_text(encoding="utf-8"))
+    assert data["constraint_km"] == data["cell_width_east_west_km"]
+    assert data["cell_width_east_west_km"] < data["cell_width_north_south_km"]
 
 
 def test_kernel_bandwidth_json_records_the_holdout_and_the_method():

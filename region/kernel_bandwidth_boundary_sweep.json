@@ -1,0 +1,93 @@
+{
+  "cell_width_east_west_km": 8.401,
+  "cell_width_north_south_km": 11.132,
+  "binding_constraint_km": 8.4,
+  "candidates_km": [
+    8.4,
+    8.5,
+    9.0,
+    9.5,
+    10.0,
+    11.0,
+    12.0,
+    14.0
+  ],
+  "strata": {
+    "shallow": {
+      "n_events": 6005,
+      "curve": [
+        {
+          "bandwidth_km": 8.4,
+          "loo_log_likelihood": 12309.0705833616
+        },
+        {
+          "bandwidth_km": 8.5,
+          "loo_log_likelihood": 12290.229608172347
+        },
+        {
+          "bandwidth_km": 9.0,
+          "loo_log_likelihood": 12193.64282984038
+        },
+        {
+          "bandwidth_km": 9.5,
+          "loo_log_likelihood": 12094.203661576421
+        },
+        {
+          "bandwidth_km": 10.0,
+          "loo_log_likelihood": 11993.308960579143
+        },
+        {
+          "bandwidth_km": 11.0,
+          "loo_log_likelihood": 11790.559832349558
+        },
+        {
+          "bandwidth_km": 12.0,
+          "loo_log_likelihood": 11589.349475016917
+        },
+        {
+          "bandwidth_km": 14.0,
+          "loo_log_likelihood": 11200.273213060345
+        }
+      ],
+      "best_km": 8.4
+    },
+    "deep": {
+      "n_events": 3260,
+      "curve": [
+        {
+          "bandwidth_km": 8.4,
+          "loo_log_likelihood": 3591.256863451381
+        },
+        {
+          "bandwidth_km": 8.5,
+          "loo_log_likelihood": 3588.045085572151
+        },
+        {
+          "bandwidth_km": 9.0,
+          "loo_log_likelihood": 3569.6256809605525
+        },
+        {
+          "bandwidth_km": 9.5,
+          "loo_log_likelihood": 3547.973176714488
+        },
+        {
+          "bandwidth_km": 10.0,
+          "loo_log_likelihood": 3523.945077601882
+        },
+        {
+          "bandwidth_km": 11.0,
+          "loo_log_likelihood": 3471.851120548503
+        },
+        {
+          "bandwidth_km": 12.0,
+          "loo_log_likelihood": 3417.7693799794506
+        },
+        {
+          "bandwidth_km": 14.0,
+          "loo_log_likelihood": 3305.3249054928065
+        }
+      ],
+      "best_km": 8.4
+    }
+  }
+}

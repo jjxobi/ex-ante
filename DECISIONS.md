@@ -886,6 +886,70 @@ not chosen: it is the earliest year at which every retained cell satisfies the
 Mc 2.6 ceiling, with cell (178, -37) the binding constraint. Measured in
 `scripts/measurements/fit_window.py`.
 
+### D13.4a, result. The prediction failed.
+
+**Frozen bandwidth: 8.4 km, both strata. It is a boundary solution, not an
+interior optimum.**
+
+**The pre-registered prediction was wrong and is kept here rather than dropped.**
+I predicted the rejection rate would improve to roughly 30 to 45 percent. What
+happened, across the same 26 windows:
+
+| Bandwidth | S-test rejects at 5% | at 1% |
+|---|---|---|
+| 30 km, hand-picked | 14 of 26, 54% | 8 of 26 |
+| 5.3 and 7.1 km, unconstrained optimum | 17 of 26, **65%** | 8 of 26 |
+| **8.4 km, constrained, frozen** | **12 of 26, 46%** | 8 of 26 |
+
+The unconstrained optimum made it **worse**, which no part of the prediction
+anticipated. The constrained value improved it to 46%, outside the predicted
+30 to 45 percent band. Direction right, magnitude optimistic, prediction failed.
+
+**The 20 percent decision rule triggers.** 46 percent is far above it, so per
+the rule fixed in advance, the remedy is kernel form rather than kernel width.
+An adaptive bandwidth scaled to the k-th nearest neighbour distance will be
+registered as a **separate model** scored on identical windows. It will not be
+folded into the baseline.
+
+**Why the unconstrained optimum was rejected.** Leave-one-out likelihood chose
+5.3 km shallow and 7.1 km deep. Both sit below one grid cell width. A smoothing
+kernel narrower than the grid it is discretised onto cannot represent anything,
+because the forecast is a rate per cell and sub-cell structure has nowhere to
+live. Below that width the criterion stops measuring predictive fit of a spatial
+density and starts measuring how a needle-shaped kernel happens to sit relative
+to grid boundaries. The likelihood surface shows it: it oscillates below one
+cell width (12500 at 1 km, 10814 at 2 km, 11838 at 3 km, 12659 at 6 km) and
+declines smoothly and monotonically above it.
+
+Following the rule past the point where its premise holds would not have been
+rigour. It is the same failure as the tolerance box rejected in D4a, and it
+would have frozen a number the measurement itself shows is noise, in a project
+whose whole premise is that a frozen number means something.
+
+**Which cell width binds, stated explicitly.** A 0.1 degree cell is about
+**8.40 km east to west** at New Zealand latitudes and about **11.13 km north to
+south**. For an isotropic Gaussian the binding constraint is the smaller
+dimension, because a kernel wide enough to be representable north to south can
+still be too narrow east to west. So 8.40 km binds. This is recorded because
+someone re-deriving cell width from latitude would get 11.13 km and otherwise
+have no way to tell whether 8.40 was a decision or an error. It is the same axis
+asymmetry that produced 39 float-binning disagreements on longitude and none on
+latitude.
+
+**A boundary solution is itself a finding.** The likelihood declines
+monotonically across the entire feasible region, verified at 8.4, 8.5, 9.0, 9.5,
+10, 11, 12 and 14 km in `scripts/measurements/bandwidth_boundary_sweep.py`, with
+no local bump inside the boundary. The data wants finer spatial resolution than
+a 0.1 degree grid can represent. That is a real mismatch between the frozen grid
+and the natural clustering scale of New Zealand seismicity, and it belongs on
+the public page rather than being presented as an ordinary fitted parameter.
+
+**One check that could have hidden a bug.** Both strata landing on the same
+boundary value is expected, since they share one grid, but it is also the shape
+of the stratum mix-up caught earlier in the b-value estimator. Confirmed
+independent: the shallow curve is computed from 5,708 events and the deep from
+2,980, so neither is a reused array.
+
 ### D13.5 Expander determinism
 
 **Determinism is bit-exact. Conservation is not.** These are different claims
