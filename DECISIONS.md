@@ -421,3 +421,38 @@ is recorded as a gap and rendered as a gap on the scoreboard.
 A missing forecast is honest. A forecast committed after the window it describes
 is indistinguishable from fraud to a reader, regardless of intent. The publish
 step refuses to write a forecast whose window has already started.
+
+---
+
+## D12. Forecast window boundaries
+
+**Every window boundary is UTC.** Daily windows run midnight to midnight UTC.
+Weekly windows run Monday 00:00:00 UTC to the following Monday 00:00:00 UTC.
+
+**Why not local time.** New Zealand observes daylight saving. Local-time daily
+windows would therefore be 23 hours long once a year and 25 hours long once a
+year, silently changing the exposure period against which a rate is scored. Two
+windows a year would be wrong by about 4 percent, with nothing to flag it, and
+the error would be invisible in the outputs. UTC removes the discontinuity
+entirely and matches CSEP convention.
+
+This is the same class of defect as the `origin_date` timezone fault found while
+building Phase 1, where 52 percent of the catalogue landed on a different
+calendar date depending on the machine. Fixing the ingest side does not fix the
+window side; both have to be pinned.
+
+**Windows are half-open: `[start, end)`.** An event whose origin time equals the
+window start belongs to that window. An event whose origin time equals the
+window end belongs to the NEXT window. Consecutive windows therefore tile the
+timeline exactly, with no gap and no overlap, so no event is double counted and
+none is dropped.
+
+This convention is not arbitrary. GeoNet's own Quake Search date parameters were
+verified to behave the same way: four adjacent five year queries covering 2005
+to 2025 returned 57,961 rows whose union was exactly 57,961 distinct event ids,
+with zero events appearing in two adjacent chunks. Matching the upstream
+convention removes a whole class of off-by-one at ingest boundaries.
+
+**The comparison is instant based, never string based.** Origin times are stored
+as instants. Boundary tests compare instants, never rendered timestamps, because
+rendering is timezone dependent.
