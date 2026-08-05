@@ -50,6 +50,7 @@ from csep.core.regions import CartesianGrid2D
 from csep.utils.time_utils import datetime_to_utc_epoch
 
 from eq import expander, region
+from eq.masked import Comparison, MaskedCount, compare_counts
 
 # Not a value from DECISIONS.md: pyCSEP's Monte Carlo tests need some seed to
 # be reproducible, and this is the one this project fixes. Chosen once and
@@ -85,6 +86,18 @@ class ScoreResult:
     hazard the way the top magnitude bin is), but is carried anyway because a
     caller handing this the full unfiltered catalogue, rather than one already
     restricted to the target set, deserves to see where every event went.
+
+    expected_count and observed_count are the same two numbers as
+    forecast.event_count and n_events_used, but wrapped in a MaskedCount
+    carrying the frozen grid's own hash as mask_id, per eq.masked. Both are
+    counts over the collection region (the forecast never covers anything
+    else; n_events_used is already region filtered by _filter_events), so
+    they carry the same mask_id and n_test_comparison() below can compare
+    them directly. Use these two fields, not the bare expected_count float or
+    the bare n_events_used int, whenever expected is compared to observed:
+    that comparison is exactly where a region-masked number was once nearly
+    set against an unmasked one, reversing the sign of the headline finding.
+    See eq.masked's module docstring for the incident this guards against.
     """
 
     window_start: datetime
@@ -93,11 +106,20 @@ class ScoreResult:
     s_test: ConsistencyTestResult
     m_test: ConsistencyTestResult
     l_test: ConsistencyTestResult
-    expected_count: float
+    expected_count: MaskedCount
+    observed_count: MaskedCount
     n_events_used: int
     n_out_of_region: int
     n_above_mmax: int
     n_below_mmin: int
+
+    def n_test_comparison(self) -> Comparison:
+        """Expected vs observed count, both required to carry the same
+        region mask. This is the one place in the codebase this comparison
+        is assembled; every caller wanting expected-vs-observed goes through
+        here rather than re-diffing the two fields by hand.
+        """
+        return compare_counts(self.expected_count, self.observed_count)
 
 
 @dataclass(frozen=True)
@@ -311,6 +333,13 @@ def score(
     m_result = pe.magnitude_test(forecast, catalogue, num_simulations=num_simulations, seed=seed)
     l_result = pe.likelihood_test(forecast, catalogue, num_simulations=num_simulations, seed=seed)
 
+    # Both counts are over the collection region: the forecast never covers
+    # anything outside it, and _filter_events already dropped out-of-region
+    # events from filtered.used. They therefore share the frozen grid's own
+    # hash as mask_id, per eq.masked, so n_test_comparison() can compare them
+    # without a caller having to know that or get it right by hand.
+    region_mask = region.grid_hash()
+
     return ScoreResult(
         window_start=start_dt,
         window_end=end_dt,
@@ -320,7 +349,8 @@ def score(
         s_test=ConsistencyTestResult("S", float(s_result.observed_statistic), float(s_result.quantile)),
         m_test=ConsistencyTestResult("M", float(m_result.observed_statistic), float(m_result.quantile)),
         l_test=ConsistencyTestResult("L", float(l_result.observed_statistic), float(l_result.quantile)),
-        expected_count=float(forecast.event_count),
+        expected_count=MaskedCount(float(forecast.event_count), region_mask),
+        observed_count=MaskedCount(float(len(filtered.used)), region_mask),
         n_events_used=len(filtered.used),
         n_out_of_region=filtered.n_out_of_region,
         n_above_mmax=filtered.n_above_mmax,

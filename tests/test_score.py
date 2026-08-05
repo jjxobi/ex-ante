@@ -437,7 +437,7 @@ def test_end_to_end_real_score_on_a_past_week(fitted_shallow, catalogue):
     # only a pass/fail bit.
     print(
         f"\nEnd-to-end score, shallow, {WINDOW_START.date()} to {WINDOW_END.date()}:\n"
-        f"  expected count: {result.expected_count:.4f}\n"
+        f"  expected count: {result.expected_count.value:.4f}\n"
         f"  observed count (used): {result.n_events_used}\n"
         f"  out of region: {result.n_out_of_region}\n"
         f"  above M8.5: {result.n_above_mmax}\n"

@@ -52,7 +52,7 @@ for source_name, rows in (("fixture", fixture_rows), ("live snapshot", snapshot_
     print(f"    fit_start:        {fitted.fit_start}")
     print(f"    fit_end:          {fitted.fit_end}")
     print(f"    b (shallow):      {fitted.b:.4f}")
-    print(f"    expected count:   {result.expected_count:.4f}")
+    print(f"    expected count:   {result.expected_count.value:.4f}")
     print(f"    observed (used):  {result.n_events_used}")
     print(f"    out of region:    {result.n_out_of_region}")
     print(f"    above M8.5:       {result.n_above_mmax}")
