@@ -122,8 +122,23 @@ not separate cleanly, say so publicly rather than picking a number.
 
 ## 4. Carried gaps from Phase 1
 
-- The continuous integration workflow has never executed. It needs a remote and
-  one manual run before it can be trusted.
+- **CI verifies less than a green run suggests.** First execution was clean,
+  27 of 27, which confirms the pipeline runs end to end on a fresh Linux runner:
+  `dbt` resolves on PATH, `python -m eq.cli` works without `PYTHONPATH`, the GNU
+  date arithmetic is right, and the freshness test passes on a rolling window.
+  But CI builds a 30 day slice of about 200 events, so **4 of the 10 data
+  contract tests are inert there**, passing because they have nothing to look at:
+  `assert_depthtype_share` (needs 2,000 M3.5+ events, the slice has 92),
+  `assert_no_exact_duplicate_events` and `assert_no_duplicate_origins` (the only
+  known duplicate is from 2018), and `assert_withdrawals_within_bound` (one
+  snapshot, so no previous to diff). The full catalogue contracts are currently
+  only verified by running the build locally. Worth a scheduled weekly job
+  against the full catalogue once Phase 4 brings a scheduler, so the contracts
+  are exercised somewhere automated rather than only on a developer machine.
+- The continuous integration workflow has now executed successfully and the
+  repository has a remote, so this item is closed. Rule 2 still needs the
+  Actions run ID and OpenTimestamps anchoring wired into the manifest before it
+  is stronger than commit metadata.
 - The UTC timezone pin lives in `dbt/profiles.yml`, not in the database file, so
   a client opening `data/eq.duckdb` directly gets local time. Consider pinning
   inside the database or moving derived dates upstream.

@@ -27,4 +27,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ["M5+", "M4-5", "M3-4", "below M3"]
+              # Nested under `arguments` because dbt 1.12 deprecates top-level
+              # arguments to generic tests. Fixed while it is a warning rather
+              # than waiting for it to become an error.
+              arguments:
+                values: ["M5+", "M4-5", "M3-4", "below M3"]

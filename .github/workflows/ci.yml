@@ -46,6 +46,24 @@ jobs:
             --min-magnitude 3.0 \
             --out "data/snapshots/catalogue-${TODAY}.parquet"
 
+      # WHAT THIS STEP PROVES, AND WHAT IT DOES NOT.
+      #
+      # It builds against a 30 day slice, about 200 events, not the full 61,000
+      # event catalogue. That is deliberate: a full pull takes minutes and
+      # hammers GeoNet on every push. The consequence is that four of the ten
+      # data contract tests are INERT here, passing because they have nothing
+      # to look at rather than because the contract holds:
+      #
+      #   assert_depthtype_share            needs 2000 M3.5+ events, slice has ~92
+      #   assert_no_exact_duplicate_events  the only known duplicate is from 2018
+      #   assert_no_duplicate_origins       same 2018 pair
+      #   assert_withdrawals_within_bound   one snapshot, so no previous to diff
+      #
+      # So a green run here means the pipeline executes end to end and the
+      # row-level contracts hold. It does NOT mean the full catalogue contracts
+      # hold. Those are verified by running the full build locally, and are the
+      # reason docs/runbook.md tells you never to relax a bound to make a test
+      # pass. See docs/phase-2-preconditions.md for the standing gap.
       - name: dbt build
         working-directory: dbt
         run: dbt build --profiles-dir .
