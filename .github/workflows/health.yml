@@ -40,6 +40,10 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
+          # Deliberately a base install with no extras. This is the only
+          # workflow that runs the package the way an outside installer would,
+          # so it is also the one place that would notice a core module reaching
+          # for a dev-only dependency. It noticed once already.
           python -m pip install -e .
 
       - name: Run the health check
@@ -50,6 +54,32 @@ jobs:
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
           set -e
           cat health.json
+          # A non-zero exit is how the command reports unhealthy, so it must not
+          # fail this step. Output that is not the expected JSON is a different
+          # thing entirely: it means the command never ran. Catch that here,
+          # where its traceback is on screen, instead of leaving the issue step
+          # to fail on an empty file and look like broken CI.
+          python - <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          raw = pathlib.Path("health.json").read_text()
+          if not raw.strip():
+              sys.exit("the health command wrote nothing; see the traceback above")
+          try:
+              report = json.loads(raw)
+          except json.JSONDecodeError as exc:
+              sys.exit(f"the health command did not write JSON: {exc}")
+
+          # Unpacked once, here, so the reporting steps below cannot each fail
+          # in their own way, and so a missing field is caught even on the
+          # healthy path where nothing else would read it.
+          for field in ("issue_title", "issue_body", "issue_marker", "reason"):
+              if field not in report:
+                  sys.exit(f"the health report is missing {field!r}")
+              pathlib.Path(f"health-{field}.txt").write_text(report[field])
+          PY
 
       - name: Open or update an issue if unhealthy
         if: steps.health.outputs.exit_code != '0'
@@ -57,14 +87,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          TITLE=$(python -c "import json; print(json.load(open('health.json'))['issue_title'])")
-          MARKER=$(python -c "import json; print(json.load(open('health.json'))['issue_marker'])")
-          BODY=$(python -c "import json; print(json.load(open('health.json'))['issue_body'])")
+          # Read from the files the health step wrote. The body is passed by
+          # path rather than through a shell variable because it is multi-line
+          # and command substitution eats its trailing newlines.
+          MARKER=$(cat health-issue_marker.txt)
           EXISTING=$(gh issue list --state open --search "$MARKER in:body" --json number --jq '.[0].number // empty')
           if [ -n "$EXISTING" ]; then
-            gh issue comment "$EXISTING" --body "$BODY"
+            gh issue comment "$EXISTING" --body-file health-issue_body.txt
           else
-            gh issue create --title "$TITLE" --body "$BODY"
+            gh issue create --title "$(cat health-issue_title.txt)" --body-file health-issue_body.txt
           fi
 
       - name: Close a previously open issue once healthy again
@@ -73,8 +104,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          MARKER=$(python -c "import json; print(json.load(open('health.json'))['issue_marker'])")
-          REASON=$(python -c "import json; print(json.load(open('health.json'))['reason'])")
+          MARKER=$(cat health-issue_marker.txt)
+          REASON=$(cat health-reason.txt)
           EXISTING=$(gh issue list --state open --search "$MARKER in:body" --json number --jq '.[0].number // empty')
           if [ -n "$EXISTING" ]; then
             gh issue comment "$EXISTING" --body "Healthy again: $REASON"

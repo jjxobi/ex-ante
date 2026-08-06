@@ -18,6 +18,14 @@ dependencies = [
     # here rather than left to arrive as a side effect of installing dev
     # extras, the same reasoning the numpy line above already states.
     "scipy>=1.11",
+    # eq.score runs the CSEP consistency tests through pyCSEP, and eq.cli
+    # reaches it via eq.render, so a base install that omits this cannot even
+    # import the command line entry point. It sat under dev extras until the
+    # health workflow, which installs no extras, died at import time with an
+    # empty stdout. Same reasoning as scipy above: eq.score is core src code,
+    # not a test, so the dependency is declared where the code actually lives.
+    # It also happens to be what the pyCSEP agreement tests import.
+    "pycsep>=0.8",
 ]
 
 [project.optional-dependencies]
@@ -25,11 +33,6 @@ dev = [
     "pytest>=8.3",
     "dbt-duckdb>=1.10",
     "hypothesis>=6.100",
-    # Declared so the pyCSEP agreement tests run in CI rather than skipping.
-    # The design spec previously assumed this was Linux only; it installs on
-    # Windows too, with pip install --user where the system Python's Scripts
-    # directory is not writable.
-    "pycsep>=0.8",
 ]
 
 [project.scripts]

@@ -25,6 +25,8 @@ from __future__ import annotations
 
 import ast
 import re
+import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -189,6 +191,67 @@ def test_the_expander_reads_no_files():
         if "open(" in line or "read_text" in line or "read_bytes" in line
     ]
     assert offenders == [], f"the expander must not touch the filesystem: {offenders}"
+
+
+# --------------------------------------------------------------------------
+# The package runs on the dependencies it declares
+# --------------------------------------------------------------------------
+
+REPO = SRC.parent.parent
+
+# Distributions whose import name is not the name pip installs. Anything absent
+# is assumed to import under its own name, which is true of the rest.
+IMPORT_NAME = {"pycsep": "csep"}
+
+
+def declared_base_dependencies() -> set[str]:
+    with (REPO / "pyproject.toml").open("rb") as handle:
+        pyproject = tomllib.load(handle)
+    declared = set()
+    for requirement in pyproject["project"]["dependencies"]:
+        distribution = re.split(r"[<>=!~\[;\s]", requirement, maxsplit=1)[0]
+        declared.add(IMPORT_NAME.get(distribution, distribution))
+    return declared
+
+
+def test_every_module_imports_only_declared_base_dependencies():
+    """A base install has to be enough to import every module in the package.
+
+    This is the test that did not exist on the day the health workflow failed.
+    eq.score imported pyCSEP, which was declared under the dev extras, so
+    `pip install -e .` produced a package whose command line entry point could
+    not be imported at all. Nothing caught it, because every other workflow
+    installs the dev extras and therefore never runs the package as an outside
+    installer would receive it.
+
+    The dev extras are for what tests need. The moment core src code imports
+    something, that something is a real dependency, and this asserts the two
+    stay in agreement without needing a clean environment to notice.
+    """
+    declared = declared_base_dependencies()
+    undeclared: dict[str, list[str]] = {}
+    for path in modules():
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                roots = [alias.name.split(".")[0] for alias in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
+                roots = [node.module.split(".")[0]]
+            else:
+                continue
+            for root in roots:
+                if root in sys.stdlib_module_names or root == "eq" or root in declared:
+                    continue
+                undeclared.setdefault(root, []).append(path.name)
+
+    assert undeclared == {}, (
+        "these packages are imported by core src code but are not declared in "
+        "[project.dependencies], so a base install cannot import them: "
+        + "; ".join(
+            f"{root} (imported by {', '.join(sorted(set(files)))})"
+            for root, files in sorted(undeclared.items())
+        )
+    )
 
 
 # --------------------------------------------------------------------------
