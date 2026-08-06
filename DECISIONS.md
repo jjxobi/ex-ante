@@ -1366,6 +1366,42 @@ improvement from a likelihood-optimised fixed bandwidth and got a worsening; the
 second predicted improvement from an adaptive kernel and got nothing. A project
 whose predictions never fail is not making predictions.
 
+### D14. Going live with a known deficiency
+
+**The baseline publishes as-is, with the 46 percent spatial rejection rate
+documented rather than repaired first.** Both horizons publish, per D6.
+
+This is the point of no return. Rule 1 forbids backfilling, so from the
+scheduler's first successful run every window is either forecast or a permanent
+gap, and restarting cleanly would mean abandoning the record under a new
+experiment identifier.
+
+**Why not fix D5 first.** This decision was already made once, when the grid was
+frozen rather than reopened to chase a cleaner spatial test. Holding the
+scheduler until D5 is "fixed" is the same decision wearing different clothes,
+except it now also costs a new experiment identifier and every day of record not
+accumulated while the rework happens, before anyone knows whether the rework
+pays off.
+
+The 46 percent is not an unknown risk sitting on the record. It is diagnosed and
+documented: traced to grid resolution rather than model failure, with two
+independent kernel forms as evidence, and the fitted parameters showing the
+floor binding almost everywhere. A record that starts by stating exactly what it
+cannot yet do is a stronger opening than one that waits until nothing is left to
+admit. This project's credibility rests on saying what it does not know.
+
+**A display obligation, not a data one.** Roughly 30 percent of daily windows
+contain no qualifying events, and per D7.1a their S, M and L tests are not
+applicable. Those cells must be labelled explicitly, for example "no seismicity
+in window", never rendered blank and never rendered as a failure. A reader has
+to be able to tell "not applicable" from "failed" at a glance, and the four
+window states of D7.2 have to remain visually distinct.
+
+That is a page-copy problem. It is not a reason to withhold a data stream D6
+already specifies, and cutting the daily horizon at the point of no return
+because of how a screen looks would be renegotiating the spec for the wrong
+reason.
+
 **Why a proportion rather than a single window's quantile.** One extreme
 quantile is unremarkable; the calibration only means anything in aggregate. The
 first scored week returned 0.0020 and that alone justified nothing.
