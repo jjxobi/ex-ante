@@ -1274,6 +1274,44 @@ recorded with the same sensitivity curve. An unbounded adaptive kernel would let
 a single remote event dominate a stratum's spatial distribution, which is a
 different way of failing the S-test than the one that made this model necessary.
 
+### D13.4c Pre-registered expectation for the adaptive model
+
+**Written before the model was built.** The last pre-registration failed, which
+is the reason to keep making them.
+
+**What the fixed kernel could not do.** A single bandwidth imposes one spatial
+scale everywhere. Real seismicity clusters at several, so a width tight enough
+for the Marlborough and Bay of Plenty concentrations is too tight for the quiet
+southwest, and one broad enough for the southwest smears the concentrations.
+That is the diagnosis the 46 percent rejection rate supports, and an adaptive
+scale is the standard remedy: dense regions stay tight, sparse ones stay smooth.
+
+**The prediction.** The spatial test rejection rate at the 5 percent level, over
+the same 26 weekly windows, falls from **46 percent (12 of 26) to between 15 and
+30 percent**. That is a real improvement and still well above the 5 percent a
+correct forecast would give.
+
+**Why not better than that.** The 8.4 km floor binds the adaptive kernel exactly
+where it would most want to be tight. Dense regions are precisely where the
+k-th neighbour is closest, so they are where the floor takes effect, and the
+floor exists because the grid cannot represent anything finer. If the underlying
+problem is that New Zealand seismicity clusters below 0.1 degree resolution,
+then an adaptive kernel cannot fix it either, and the ceiling on this model's
+performance is the grid, not the kernel.
+
+**The falsifiable part.** If the rejection rate lands at or below 5 percent, the
+diagnosis that the grid is the limiting factor is wrong and the fixed kernel's
+form was the whole problem. If it stays above 40 percent, the adaptive kernel
+has bought essentially nothing and the grid resolution is confirmed as the
+binding constraint, which would be a finding about D5 rather than about any
+model.
+
+**What happens either way.** This registers as a separate model scored on
+identical windows. It does not replace the baseline regardless of outcome,
+because a baseline that acquires the sophistication of its challengers stops
+being a baseline, and the information gain reported against it would stop
+meaning anything.
+
 **Why a proportion rather than a single window's quantile.** One extreme
 quantile is unremarkable; the calibration only means anything in aggregate. The
 first scored week returned 0.0020 and that alone justified nothing.
