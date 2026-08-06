@@ -89,7 +89,25 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add forecasts/ evaluation/ site/
+          # git add aborts the whole staging operation, and stages nothing, if
+          # any single pathspec matches no file. All three directories do exist
+          # by this point today: evaluation/ is tracked so checkout restores it,
+          # publish-cycle creates forecasts/, and the render step creates site/.
+          # The hazard is what happens if that ever stops being true, which is
+          # out of proportion to its cause. The run would have already published
+          # its windows, and discarding them here means Rule 1 forbids ever
+          # republishing them: those windows become permanent gaps in the record.
+          # So require the directory this step exists to commit, and take the
+          # other two only if something wrote them.
+          if [ ! -d forecasts ]; then
+            echo "publish-cycle produced no forecasts directory" >&2
+            exit 1
+          fi
+          for path in forecasts evaluation site; do
+            if [ -d "$path" ]; then
+              git add "$path"
+            fi
+          done
           if git diff --cached --quiet; then
             echo "nothing new to commit"
             exit 0
