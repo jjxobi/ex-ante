@@ -1,0 +1,355 @@
+{
+  "method": "leave-one-out Poisson log-likelihood cross validation on fit-period events only, per DECISIONS.md D13.4b. The ceiling is selected first with k profiled out (stage 1, shared across strata); k is then selected per stratum at that frozen ceiling (stage 2).",
+  "floor_km": 8.4,
+  "floor_rationale": "one grid cell width east to west, the smaller of the two cell dimensions at New Zealand latitudes and therefore binding for an isotropic kernel; inherited unchanged from the fixed kernel's own D13.4a derivation, since it is a property of the grid, not of the kernel form",
+  "holdout_start": "2026-02-03T01:13:29.352000+00:00",
+  "window_days": 7,
+  "n_windows_held_out": 26,
+  "ceiling_selection": {
+    "rule": "for each candidate ceiling, the best leave-one-out Poisson log-likelihood achievable over a representative k grid is recorded per stratum (k profiled out), the two strata's profiled log-likelihoods are summed to one joint score per ceiling, and the ceiling maximising that joint score is selected; this ceiling is shared by both strata, unlike k",
+    "k_profile_candidates": [
+      4,
+      8,
+      16,
+      32,
+      64
+    ],
+    "candidates_km": [
+      8.4,
+      15.0,
+      20.0,
+      25.0,
+      30.0,
+      40.0,
+      55.0,
+      75.0,
+      100.0,
+      130.0,
+      175.0,
+      230.0,
+      300.0,
+      400.0,
+      550.0,
+      750.0,
+      1000.0
+    ],
+    "curve": [
+      {
+        "ceiling_km": 8.4,
+        "shallow_best_k": 4,
+        "shallow_loo_log_likelihood": 12309.0705833616,
+        "deep_best_k": 4,
+        "deep_loo_log_likelihood": 3591.256863451381,
+        "joint_loo_log_likelihood": 15900.32744681298
+      },
+      {
+        "ceiling_km": 15.0,
+        "shallow_best_k": 4,
+        "shallow_loo_log_likelihood": 12391.411916117931,
+        "deep_best_k": 4,
+        "deep_loo_log_likelihood": 3664.5697417228057,
+        "joint_loo_log_likelihood": 16055.981657840737
+      },
+      {
+        "ceiling_km": 20.0,
+        "shallow_best_k": 4,
+        "shallow_loo_log_likelihood": 12399.687351180699,
+        "deep_best_k": 4,
+        "deep_loo_log_likelihood": 3673.4457097894656,
+        "joint_loo_log_likelihood": 16073.133060970165
+      },
+      {
+        "ceiling_km": 25.0,
+        "shallow_best_k": 4,
+        "shallow_loo_log_likelihood": 12401.36303834942,
+        "deep_best_k": 4,
+        "deep_loo_log_likelihood": 3675.713780088028,
+        "joint_loo_log_likelihood": 16077.076818437448
+      },
+      {
+        "ceiling_km": 30.0,
+        "shallow_best_k": 4,
+        "shallow_loo_log_likelihood": 12400.959823277872,
+        "deep_best_k": 4,
+        "deep_loo_log_likelihood": 3677.7520716276304,
+        "joint_loo_log_likelihood": 16078.711894905502
+      },
+      {
+        "ceiling_km": 40.0,
+        "shallow_best_k": 4,
+        "shallow_loo_log_likelihood": 12399.72672074223,
+        "deep_best_k": 4,
+        "deep_loo_log_likelihood": 3679.4118349221844,
+        "joint_loo_log_likelihood": 16079.138555664415
+      },
+      {
+        "ceiling_km": 55.0,
+        "shallow_best_k": 4,
+        "shallow_loo_log_likelihood": 12398.616653400848,
+        "deep_best_k": 4,
+        "deep_loo_log_likelihood": 3680.08090261602,
+        "joint_loo_log_likelihood": 16078.697556016868
+      },
+      {
+        "ceiling_km": 75.0,
+        "shallow_best_k": 4,
+        "shallow_loo_log_likelihood": 12398.337898637046,
+        "deep_best_k": 4,
+        "deep_loo_log_likelihood": 3680.3452462470045,
+        "joint_loo_log_likelihood": 16078.683144884051
+      },
+      {
+        "ceiling_km": 100.0,
+        "shallow_best_k": 4,
+        "shallow_loo_log_likelihood": 12398.337898637046,
+        "deep_best_k": 4,
+        "deep_loo_log_likelihood": 3680.4427562851206,
+        "joint_loo_log_likelihood": 16078.780654922168
+      },
+      {
+        "ceiling_km": 130.0,
+        "shallow_best_k": 4,
+        "shallow_loo_log_likelihood": 12398.337898637046,
+        "deep_best_k": 4,
+        "deep_loo_log_likelihood": 3680.505364917211,
+        "joint_loo_log_likelihood": 16078.843263554258
+      },
+      {
+        "ceiling_km": 175.0,
+        "shallow_best_k": 4,
+        "shallow_loo_log_likelihood": 12398.337898637046,
+        "deep_best_k": 4,
+        "deep_loo_log_likelihood": 3680.546417479772,
+        "joint_loo_log_likelihood": 16078.884316116819
+      },
+      {
+        "ceiling_km": 230.0,
+        "shallow_best_k": 4,
+        "shallow_loo_log_likelihood": 12398.337898637046,
+        "deep_best_k": 4,
+        "deep_loo_log_likelihood": 3680.546417479772,
+        "joint_loo_log_likelihood": 16078.884316116819
+      },
+      {
+        "ceiling_km": 300.0,
+        "shallow_best_k": 4,
+        "shallow_loo_log_likelihood": 12398.337898637046,
+        "deep_best_k": 4,
+        "deep_loo_log_likelihood": 3680.546417479772,
+        "joint_loo_log_likelihood": 16078.884316116819
+      },
+      {
+        "ceiling_km": 400.0,
+        "shallow_best_k": 4,
+        "shallow_loo_log_likelihood": 12398.337898637046,
+        "deep_best_k": 4,
+        "deep_loo_log_likelihood": 3680.546417479772,
+        "joint_loo_log_likelihood": 16078.884316116819
+      },
+      {
+        "ceiling_km": 550.0,
+        "shallow_best_k": 4,
+        "shallow_loo_log_likelihood": 12398.337898637046,
+        "deep_best_k": 4,
+        "deep_loo_log_likelihood": 3680.546417479772,
+        "joint_loo_log_likelihood": 16078.884316116819
+      },
+      {
+        "ceiling_km": 750.0,
+        "shallow_best_k": 4,
+        "shallow_loo_log_likelihood": 12398.337898637046,
+        "deep_best_k": 4,
+        "deep_loo_log_likelihood": 3680.546417479772,
+        "joint_loo_log_likelihood": 16078.884316116819
+      },
+      {
+        "ceiling_km": 1000.0,
+        "shallow_best_k": 4,
+        "shallow_loo_log_likelihood": 12398.337898637046,
+        "deep_best_k": 4,
+        "deep_loo_log_likelihood": 3680.546417479772,
+        "joint_loo_log_likelihood": 16078.884316116819
+      }
+    ],
+    "selected_ceiling_km": 40.0,
+    "is_boundary_solution": false,
+    "monotonic_increasing_across_range": false,
+    "monotonic_decreasing_across_range": false
+  },
+  "strata": {
+    "shallow": {
+      "n_events": 5708,
+      "k_candidates": [
+        2,
+        4,
+        6,
+        8,
+        12,
+        16,
+        24,
+        32,
+        48,
+        64,
+        96
+      ],
+      "curve": [
+        {
+          "k": 2,
+          "loo_log_likelihood": 12411.710670126888,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 4,
+          "loo_log_likelihood": 12399.72672074223,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 6,
+          "loo_log_likelihood": 12368.960667961783,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 8,
+          "loo_log_likelihood": 12306.502770895326,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 12,
+          "loo_log_likelihood": 12168.830196404788,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 16,
+          "loo_log_likelihood": 12066.613405267875,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 24,
+          "loo_log_likelihood": 11908.309624573269,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 32,
+          "loo_log_likelihood": 11738.857871440914,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 48,
+          "loo_log_likelihood": 11482.26709389802,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 64,
+          "loo_log_likelihood": 11235.202043350817,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 96,
+          "loo_log_likelihood": 10719.059241232007,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        }
+      ],
+      "selected_k": 2,
+      "is_boundary_solution": true,
+      "monotonic_declining_from_selected": true
+    },
+    "deep": {
+      "n_events": 2980,
+      "k_candidates": [
+        2,
+        4,
+        6,
+        8,
+        12,
+        16,
+        24,
+        32,
+        48,
+        64,
+        96
+      ],
+      "curve": [
+        {
+          "k": 2,
+          "loo_log_likelihood": 3676.383933564244,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 4,
+          "loo_log_likelihood": 3679.4118349221844,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 6,
+          "loo_log_likelihood": 3672.0888486778667,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 8,
+          "loo_log_likelihood": 3645.414864164817,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 12,
+          "loo_log_likelihood": 3602.730209622936,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 16,
+          "loo_log_likelihood": 3571.884806157705,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 24,
+          "loo_log_likelihood": 3458.9761475413693,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 32,
+          "loo_log_likelihood": 3394.2838200204433,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 48,
+          "loo_log_likelihood": 3251.595100361869,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 64,
+          "loo_log_likelihood": 3097.2376702514366,
+          "sigma_km_min": 8.4,
+          "sigma_km_max": 40.0
+        },
+        {
+          "k": 96,
+          "loo_log_likelihood": 2825.229636476217,
+          "sigma_km_min": 8.714448006309361,
+          "sigma_km_max": 40.0
+        }
+      ],
+      "selected_k": 4,
+      "is_boundary_solution": false,
+      "monotonic_declining_from_selected": false
+    }
+  }
+}

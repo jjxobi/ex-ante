@@ -12,6 +12,12 @@ dependencies = [
     # makes determinism a claim about the dependency set as much as about the
     # code, so this is declared explicitly rather than relied on transitively.
     "numpy>=1.26",
+    # eq.adaptive's k-th nearest neighbour search (cKDTree), per D13.4b. Was
+    # already present transitively through pyCSEP's dev-only dependency, but
+    # eq.adaptive is core src code, not a test, so it is declared explicitly
+    # here rather than left to arrive as a side effect of installing dev
+    # extras, the same reasoning the numpy line above already states.
+    "scipy>=1.11",
 ]
 
 [project.optional-dependencies]

@@ -1312,6 +1312,60 @@ because a baseline that acquires the sophistication of its challengers stops
 being a baseline, and the information gain reported against it would stop
 meaning anything.
 
+### D13.4c, result. The prediction failed, and the falsification condition fired.
+
+**The adaptive kernel bought nothing.**
+
+| Model | S-test rejects at 5% | at 1% |
+|---|---|---|
+| Fixed kernel, 8.4 km | 12 of 26, 46.2% | 8 of 26 |
+| **Adaptive, k per stratum** | **12 of 26, 46.2%** | **10 of 26** |
+
+Identical at the 5 percent level and worse at 1 percent. The predicted 15 to 30
+percent band was wrong, and the explicit falsification condition written in
+advance, "if it stays above 40 percent the adaptive kernel has bought
+essentially nothing and grid resolution is confirmed as the binding constraint",
+was met.
+
+**So the finding is about D5, not about any model.** The 0.1 degree grid cannot
+represent the scale at which New Zealand seismicity actually clusters. Two
+independent kernel forms, tuned by the same rule on the same data, both land at
+the same place and both fail the spatial test the same way. That is not a
+property of Gaussian kernels; it is a property of the discretisation.
+
+**The mechanism is visible in the fitted parameters.** The per-point scale hits
+the 8.4 km floor in essentially every row of both strata's sensitivity curves,
+only lifting off it at k=96 in the deep stratum. An adaptive kernel whose scale
+is pinned to the floor almost everywhere is a fixed kernel at the floor, which
+is exactly what the baseline already was, so the two producing identical
+rejection rates is the expected consequence rather than a coincidence.
+
+**Per-stratum selection was justified and would have been missed otherwise.**
+Shallow selects **k=2, a boundary solution**, with likelihood declining
+monotonically from the smallest candidate. Deep selects **k=4, a genuine
+interior optimum**. Different values and different kinds of solution, so a
+single k chosen once would have been wrong for one of them and would have hidden
+that shallow is still pressed against its lower bound.
+
+**The ceiling is 40 km, interior, and barely determined.** The joint likelihood
+runs 16077.1 at 25 km, 16079.1 at 40 km and 16078.9 at 750 km: a spread of two
+log-likelihood units in sixteen thousand. It is selected by the stated rule, but
+the surface is close to flat above about 25 km, because a ceiling that high
+rarely binds. Recorded as a weakly identified parameter rather than presented as
+a precise optimum.
+
+**What this does not license.** D5 is frozen. This result is not permission to
+change the grid, which would break comparability with every forecast already
+scored and require a new experiment identifier. It is recorded as a known
+limitation of experiment `nz-01`, and it belongs on the public page: the
+forecasts are evaluated on a grid demonstrably coarser than the phenomenon, and
+the spatial test says so on nearly half of all windows.
+
+**Two failed pre-registrations now.** Both were kept. The first predicted
+improvement from a likelihood-optimised fixed bandwidth and got a worsening; the
+second predicted improvement from an adaptive kernel and got nothing. A project
+whose predictions never fail is not making predictions.
+
 **Why a proportion rather than a single window's quantile.** One extreme
 quantile is unremarkable; the calibration only means anything in aggregate. The
 first scored week returned 0.0020 and that alone justified nothing.
