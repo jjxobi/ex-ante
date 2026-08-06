@@ -73,6 +73,21 @@ class ConsistencyTestResult:
     observed_statistic: float
     quantile: object
 
+    # False when the test had nothing to work with, which for S, M and L means
+    # the window contained no observed events. A non-applicable result carries a
+    # quantile of 1.0 straight out of pyCSEP, and 1.0 is the most passing value
+    # there is, so anything rendering or aggregating these MUST check this flag
+    # rather than reading the quantile. Defaults True so an omission is a
+    # visible bug rather than a silent suppression.
+    applicable: bool = True
+
+    def __post_init__(self) -> None:
+        if not self.applicable and self.name == "N":
+            raise ValueError(
+                "the N test is always applicable: observing zero events against "
+                "a non-zero expectation is informative, not undefined"
+            )
+
 
 @dataclass(frozen=True)
 class ScoreResult:
@@ -340,15 +355,54 @@ def score(
     # without a caller having to know that or get it right by hand.
     region_mask = region.grid_hash()
 
+    # A window with no observed events makes the S, M and L tests UNDEFINED,
+    # not passing. All three condition on the observed events: S tests where
+    # they fell, M tests their magnitudes, L tests the joint likelihood of the
+    # set. With an empty set there is nothing to test.
+    #
+    # pyCSEP does not say so. It computes scale = n_obs / n_fore, which is zero,
+    # then log(forecast * scale), which is log(0) for every bin. The negative
+    # infinities never reach a sum because the observed-event index is empty, so
+    # nothing crashes and all three come back with quantile 1.0: the highest,
+    # most passing value there is. A quiet window would render as the forecast's
+    # best day.
+    #
+    # This is not rare. At roughly 1.6 in-region shallow events per day, 30
+    # percent of daily windows have none, measured over the last 120 days in
+    # scripts/measurements/zero_event_window.py.
+    #
+    # The N test is exempt and stays applicable: observing zero against an
+    # expected 15 is genuinely informative, and it correctly returns a quantile
+    # near 2.6e-07 rather than 1.0.
+    tests_applicable = len(filtered.used) > 0
+
     return ScoreResult(
         window_start=start_dt,
         window_end=end_dt,
         n_test=ConsistencyTestResult(
-            "N", float(n_result.observed_statistic), tuple(float(q) for q in n_result.quantile)
+            "N",
+            float(n_result.observed_statistic),
+            tuple(float(q) for q in n_result.quantile),
+            applicable=True,
         ),
-        s_test=ConsistencyTestResult("S", float(s_result.observed_statistic), float(s_result.quantile)),
-        m_test=ConsistencyTestResult("M", float(m_result.observed_statistic), float(m_result.quantile)),
-        l_test=ConsistencyTestResult("L", float(l_result.observed_statistic), float(l_result.quantile)),
+        s_test=ConsistencyTestResult(
+            "S",
+            float(s_result.observed_statistic),
+            float(s_result.quantile),
+            applicable=tests_applicable,
+        ),
+        m_test=ConsistencyTestResult(
+            "M",
+            float(m_result.observed_statistic),
+            float(m_result.quantile),
+            applicable=tests_applicable,
+        ),
+        l_test=ConsistencyTestResult(
+            "L",
+            float(l_result.observed_statistic),
+            float(l_result.quantile),
+            applicable=tests_applicable,
+        ),
         expected_count=MaskedCount(float(forecast.event_count), region_mask),
         observed_count=MaskedCount(float(len(filtered.used)), region_mask),
         n_events_used=len(filtered.used),

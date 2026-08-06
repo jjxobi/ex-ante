@@ -585,6 +585,52 @@ The asymmetry matters because the two look identical from inside a single
 window's evaluation and are completely different operationally. One is a broken
 pipeline, the other is one bad day.
 
+### D7.1a An empty window does not pass, it is undefined
+
+**When a window contains no observed events, the S, M and L tests are marked
+NOT APPLICABLE. Only the N test remains valid.**
+
+This was found by chasing a warning that had been noted as pre-existing and
+harmless. It is neither.
+
+**What pyCSEP does.** For the spatial, magnitude and likelihood tests it
+computes `scale = n_obs / n_fore` and then `log(forecast_data * scale)`. With
+zero observed events the scale is zero, so every bin becomes `log(0)`, negative
+infinity. Nothing crashes, because the index of observed events is empty and
+those infinities are never summed. All three tests return a quantile of
+**1.0**, which is the highest and most passing value available. A window with no
+evidence in it renders as the forecast's best day.
+
+**Why the three are undefined rather than passing.** S, M and L all condition on
+the observed events: S tests where they fell, M tests their magnitudes, L tests
+the joint likelihood of that set. With an empty set there is no spatial
+distribution, no magnitude distribution, and no set. There is nothing to be
+right or wrong about.
+
+**Why the N test is exempt.** It does not condition on the observed events. It
+asks whether the observed count is consistent with the expected one, and zero
+against an expected 15 is strong information, correctly returning a quantile
+near 2.6e-07 rather than 1.0.
+
+**How often this happens.** Measured over the last 120 days in
+`scripts/measurements/zero_event_window.py`:
+
+| Horizon | Windows checked | With zero in-region shallow events |
+|---|---|---|
+| Weekly | 26 | 0, none |
+| **Daily** | 120 | **36, 30 percent** |
+
+So the weekly calibration in D13.4b is uncontaminated and its 46 percent
+rejection rate stands. The daily scoreboard is a different matter: without this
+flag, roughly a third of its cells would show a perfect pass on no evidence, and
+any aggregate over daily windows would be flattered by that third.
+
+**The obligation this creates.** Anything rendering or aggregating consistency
+test results must read `applicable` and must not read the quantile when it is
+false. The flag defaults to true so that forgetting it is a visible bug rather
+than a silent suppression, and constructing an N test with `applicable=False`
+raises, because that would discard the one test that still means something.
+
 ### D7.2 The four states a window can be in
 
 A scoreboard cell must distinguish these, and they must render differently. A
