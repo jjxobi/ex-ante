@@ -11,6 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The history audit reads every commit that ever touched the published
+          # record. actions/checkout fetches depth 1 by default, which would
+          # leave the audit examining one commit and reporting clean. The audit
+          # refuses to run against a shallow clone rather than degrade quietly,
+          # so this is what keeps it able to run at all.
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -30,6 +37,13 @@ jobs:
         env:
           HYPOTHESIS_PROFILE: ci
         run: python -m pytest -v
+
+      - name: Audit the published record against git history
+        # Runs on every push to main, which includes the scheduler's own daily
+        # publish commit, so the whole record is re-audited each day rather than
+        # whenever someone remembers to. The audit imports nothing from eq: an
+        # auditor sharing code with what it audits would confirm its bugs.
+        run: python scripts/audit_history.py
 
       - name: Ingest a recent catalogue slice
         # The output filename must be date shaped. stg_quakes selects the

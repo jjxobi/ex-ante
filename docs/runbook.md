@@ -52,6 +52,44 @@ As of this writing, this builds 2 models and runs 22 data tests, 24 nodes
 total, all passing, against a catalogue of 61,191 events at magnitude 3.0 and
 above, spanning 2005-01-01 to 2026-08-03.
 
+## Audit the published record
+
+```bash
+python scripts/audit_history.py            # offline
+python scripts/audit_history.py --online   # also verifies the Actions runs
+python scripts/audit_history.py --json     # machine readable
+```
+
+Exit codes are `0` clean, `1` violations found, and `2` could not audit (shallow
+clone, or `--online` without `gh`). The last is deliberately distinct: "audited
+and found problems" and "never actually audited" are different answers, and a
+caller that conflates them draws the wrong conclusion from either.
+
+It runs in CI on
+every push to `main`, which includes the scheduler's daily publish commit, so
+the full record is re-audited daily rather than whenever someone remembers.
+
+This is the check a reader runs when they do not trust the author, so a few
+properties are deliberate:
+
+- It imports nothing from `eq`. An auditor built on the module it audits
+  inherits that module's bugs and then confirms them.
+- It reads git history, not just the current checkout. A forecast that was
+  altered and altered back would leave `HEAD` looking honest.
+- It **refuses** to run against a shallow clone rather than reporting clean.
+  `actions/checkout` fetches depth 1 by default, which would leave every check
+  examining one commit and printing "Clean", and a green audit gets read as
+  proof. This is why `ci.yml` sets `fetch-depth: 0`.
+
+Human-authored commits under `forecasts/` are reported as **notices**, not
+violations. D10 does not forbid a human touching the record, it requires that
+such a touch be visible; failing the audit would create an incentive to hide
+it. There is currently one, on a test evaluation catalogue.
+
+Every check is mutation-tested in `tests/test_history_audit.py`: neutering any
+one check must break at least one test, so a check that has quietly stopped
+working cannot keep passing.
+
 ## Always read origin_date, never re-derive it
 
 `origintime` is stored as `TIMESTAMP WITH TIME ZONE`. Casting it to a date
