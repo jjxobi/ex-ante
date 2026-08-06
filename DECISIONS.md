@@ -15,6 +15,29 @@ Source: GeoNet Quake Search, bounding box `163.60840,-49.18170,182.98828,-32.287
 
 Every number below is regenerable by a script in `scripts/measurements/`.
 
+**Which claims in this file are executable.** Most of what is frozen here is
+numeric or behavioural, and has ended up as a test: the bandwidth floor, the
+duplicate rule, the depth boundary, the empty-window rule. Code drifting from
+any of those fails loudly.
+
+Architectural claims are different. A sentence like "these two things are
+independent" or "there is one definition of this" is not the kind of thing a
+normal test suite checks, because nothing executes prose. That is a third kind
+of drift, alongside code bugs and untested invariants, and this project has
+already had one: `eq/snapshots.py` asserted that its two selectors shared no
+helper, which was true when written and false one commit later, and stayed
+false until someone read it. A stale architectural claim is worse than an
+absent one, because a reader trusts it.
+
+So the architectural claims are enforced in `tests/test_architecture.py`, which
+checks by source inspection that the dated-snapshot pattern is defined exactly
+once, that no module globs the snapshot directory itself, that the freeze never
+reaches for the recency selector, that no module uses another module's private
+names, and that the expander imports nothing that could vary between runs. Each
+of those corresponds to a sentence written somewhere in this file or in a module
+docstring, and the sentence is only allowed to exist because something enforces
+it.
+
 **A test for the justifications in this file.** If a justification would have to
 change depending on what date it was written, it is probably resting on the
 wrong thing.
@@ -1209,6 +1232,47 @@ under:
 
 If k lands on a boundary too, that is a second finding about the grid, not a
 number to quietly report as though it were chosen freely.
+
+**k is selected PER STRATUM, and that is measured rather than assumed.** From
+`scripts/measurements/stratum_density.py`, over the fit window:
+
+| | Events | Occupied cells | Density, events per km2 |
+|---|---|---|---|
+| Shallow | 6,005 | 1,381 of 4,100 | 0.0157 |
+| Deep | 3,260 | 946 of 4,100 | 0.0085 |
+
+Deep is **1.85 times sparser**, so the same k produces a systematically broader
+kernel there. The implied radius at each candidate:
+
+| k | Shallow | Deep |
+|---|---|---|
+| 4 | 9.0 km | 12.2 km |
+| 8 | 12.7 km | 17.3 km |
+| 16 | 18.0 km | 24.5 km |
+| 32 | 25.5 km | 34.6 km |
+
+That is a 36 percent difference at every k, which makes a single k chosen
+against shallow density wrong for deep in the same way the fixed 30 km bandwidth
+was wrong for both. It also interacts with the floor: k=4 puts shallow at 9.0 km,
+barely above the 8.4 km floor, while deep is still at 12.2 km. **The floor binds
+at a different k in each stratum**, so one value cannot satisfy both.
+
+**A ceiling is needed as well as a floor, and this was not anticipated.** The
+concern raised when this was specified was that a sparse stratum might not
+contain k neighbours at all. Globally that is not the risk: both strata hold
+thousands of events, so k is never exhausted outright.
+
+The real hazard is the opposite shape. An isolated event in a sparse corner has
+its k-th nearest neighbour a very long way off, so its adaptive bandwidth grows
+without bound and it smears rate across a large part of the region. In the deep
+stratum, where 41.6 percent of occupied cells hold exactly one event, that is
+not a rare configuration.
+
+So the adaptive model carries **both** bounds: no per-point scale below 8.4 km,
+one cell width, and a ceiling to be selected by the same stated rule and
+recorded with the same sensitivity curve. An unbounded adaptive kernel would let
+a single remote event dominate a stratum's spatial distribution, which is a
+different way of failing the S-test than the one that made this model necessary.
 
 **Why a proportion rather than a single window's quantile.** One extreme
 quantile is unremarkable; the calibration only means anything in aggregate. The
