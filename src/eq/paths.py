@@ -31,6 +31,14 @@ REVISION_DIR = DATA_DIR / "revisions"
 REGION_DIR = REPO_ROOT / "region"
 MEASUREMENTS_DIR = REPO_ROOT / "scripts" / "measurements"
 
+# Not under data/, for the same reason REGION_DIR is not. D7 requires the
+# T+45 frozen evaluation catalogue to ship in the same commit as the score it
+# produced, so it cannot live under data/, which is entirely gitignored. This
+# is a separate directory from EVALUATION_DIR above on purpose: EVALUATION_DIR
+# is working, gitignored space, while this one holds the committed, one file
+# per scored window artifact D7 requires.
+EVALUATION_CATALOGUE_DIR = REPO_ROOT / "evaluation"
+
 
 def ensure_dirs() -> None:
     """Create every data directory this project writes to."""
