@@ -13,6 +13,7 @@ would show a perfect pass on no evidence.
 
 from __future__ import annotations
 
+import dataclasses
 import datetime as dt
 import pathlib
 
@@ -85,3 +86,76 @@ def test_the_n_test_can_never_be_marked_inapplicable():
 def test_applicable_defaults_to_true_so_an_omission_is_visible():
     """A result constructed without the flag must not silently suppress itself."""
     assert score.ConsistencyTestResult("S", 0.0, 0.5).applicable is True
+
+
+# --------------------------------------------------------------------------
+# The structural invariant
+# --------------------------------------------------------------------------
+
+def _consistency_test_fields(result) -> list[str]:
+    """Every ConsistencyTestResult on a ScoreResult, found by inspection.
+
+    Deliberately not a hardcoded list of n_test, s_test, m_test, l_test. The
+    point is that a FIFTH test added later is covered without anyone
+    remembering to extend this.
+    """
+    return [
+        field.name
+        for field in dataclasses.fields(result)
+        if isinstance(getattr(result, field.name), score.ConsistencyTestResult)
+    ]
+
+
+def test_every_conditional_test_is_inapplicable_on_an_empty_window(empty_window_result):
+    """The invariant, enforced structurally rather than per construction site.
+
+    The `applicable` default of True protects against wrongly discarding good
+    data, which is a real risk in the other direction. But it does nothing to
+    stop the original bug recurring: a new test type whose author forgets the
+    zero-event check ships as applicable True carrying a degenerate quantile,
+    which is this same defect relocated.
+
+    So the rule is asserted over whatever tests actually exist, not over the
+    three that exist today. Any conditional test that is applicable on an empty
+    window fails here, whether or not anyone remembered to think about it.
+    """
+    names = _consistency_test_fields(empty_window_result)
+    assert len(names) >= 4, "expected at least the four consistency tests"
+    assert empty_window_result.n_events_used == 0
+
+    for field_name in names:
+        test = getattr(empty_window_result, field_name)
+        if test.name == "N":
+            assert test.applicable is True, (
+                "the N test is informative on an empty window and must stay applicable"
+            )
+        else:
+            assert test.applicable is False, (
+                f"{field_name} ({test.name}) reports applicable on a window with no "
+                f"observed events. It conditions on those events, so it is undefined "
+                f"here, not passing. Its quantile is {test.quantile}, and pyCSEP "
+                f"returns 1.0 for exactly this case, which is the most passing value "
+                f"available. See DECISIONS.md D7.1a."
+            )
+
+
+def test_every_test_is_applicable_when_events_exist():
+    """The same invariant in the other direction.
+
+    A test wrongly marked inapplicable would silently discard real evidence,
+    which is the failure the True default guards against. Also checked
+    structurally.
+    """
+    catalogue = storage.read_parquet(FIXTURE)
+    fitted = baseline.fit(catalogue, "shallow")
+    dense = expander.expand(baseline.forecast(fitted, START, END))
+    observed = [e for e in catalogue if START <= e["origintime"] < END]
+    result = score.score(dense, observed, START, END)
+
+    assert result.n_events_used > 0
+    for field_name in _consistency_test_fields(result):
+        test = getattr(result, field_name)
+        assert test.applicable is True, (
+            f"{field_name} ({test.name}) is marked inapplicable on a window with "
+            f"{result.n_events_used} observed events, discarding real evidence"
+        )

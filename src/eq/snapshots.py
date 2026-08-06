@@ -59,6 +59,36 @@ class SnapshotNotFoundForDateError(FileNotFoundError):
     """
 
 
+def dated_snapshots(directory: Path | None = None) -> list[tuple[date, Path]]:
+    """Every date-shaped snapshot, oldest first, as (date, path) pairs.
+
+    This is the single definition of what counts as a dated snapshot, and it is
+    public so that callers needing to ENUMERATE rather than SELECT have one to
+    use. eq.freeze needs exactly that: it must decide whether the directory
+    holds anything at all, to tell a broken pipeline apart from one missing
+    day, and neither selector answers that question.
+
+    Without this, a caller wanting that answer would write its own glob and its
+    own filename pattern, leaving two definitions that must agree. This project
+    has already had two mechanisms drift apart twice, so the enumeration is
+    exposed rather than left private and reached into.
+
+    Note this returns snapshots for INSPECTION. Choosing one to use goes
+    through newest_snapshot or snapshot_for_date, which carry the contracts.
+    """
+    return _dated_snapshots(directory)
+
+
+def has_any_dated_snapshot(directory: Path | None = None) -> bool:
+    """Whether any date-shaped snapshot exists at all.
+
+    The question that separates a systemic failure, nothing has ever been
+    ingested, from a local one, a particular day did not land. D7.2 requires
+    those to produce different outcomes.
+    """
+    return bool(_dated_snapshots(directory))
+
+
 def _dated_snapshots(directory: Path | None = None) -> list[tuple[date, Path]]:
     directory = paths.SNAPSHOT_DIR if directory is None else Path(directory)
     found: list[tuple[date, Path]] = []

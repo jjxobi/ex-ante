@@ -47,7 +47,7 @@ that reason has to be honoured:
   missing one date or holds nothing at all (see its own docstring and
   `tests/test_snapshots.py`). Telling the two situations apart is therefore
   this module's job, not `eq.snapshots`'s. It is done with `_require_any_dated_snapshot`
-  below, which reuses `eq.snapshots`'s own directory listing rather than
+  below, which calls `eq.snapshots.has_any_dated_snapshot` rather than
   duplicating its glob or its date-shaped filename pattern, and which never
   reaches for the recency selector: that function's job is picking a
   snapshot for use, a different and forbidden use here, not checking
@@ -308,7 +308,7 @@ def _require_any_dated_snapshot(directory: Path) -> None:
     also offers: that one exists to pick the most recent snapshot for use, a
     job with nothing to do with checking whether any snapshot exists.
     """
-    if not snapshots._dated_snapshots(directory):
+    if not snapshots.has_any_dated_snapshot(directory):
         raise snapshots.NoSnapshotsError(
             f"no date-shaped snapshot in {directory}. This is systemic: "
             f"ingest has not run, the directory is wrong, or the volume "
