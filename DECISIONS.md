@@ -15,6 +15,21 @@ Source: GeoNet Quake Search, bounding box `163.60840,-49.18170,182.98828,-32.287
 
 Every number below is regenerable by a script in `scripts/measurements/`.
 
+**A test for the justifications in this file.** If a justification would have to
+change depending on what date it was written, it is probably resting on the
+wrong thing.
+
+"We have not published yet, so this is still safe to change" is true today and
+false later. "This mechanism defends against an attacker this project was never
+built to survive" is true whenever you read it. The second is the kind of
+reasoning a frozen decision needs, because a constitution whose arguments expire
+is not frozen, it is merely undisturbed.
+
+This is the same property that made the depth boundary derived rather than
+eyeballed, and that made the kernel bandwidth a boundary solution stated as a
+finding rather than a fitted value. It applies to the prose as much as to the
+numbers, and D10's removal record is written to it deliberately.
+
 ---
 
 ## D1. Collection region
@@ -554,6 +569,21 @@ patched.
 This is the same defect class as the CI artifact that sorted after every real
 dated catalogue and would have been chosen by a naive newest-file rule. Taking
 the newest available snapshot would be that bug wearing different clothes.
+
+**The two failure modes are different failures, and the freeze must branch on
+them.** `eq.snapshots` raises distinct types for a reason, and that reason is
+only realised if the caller acts on the difference. Catching both, logging, and
+continuing would leave the distinction alive in the type system and dead at the
+point it matters.
+
+| Condition | Meaning | Required response |
+|---|---|---|
+| `NoSnapshotsError`, the snapshot directory holds nothing dated | Systemic. Ingest has not run, or the directory is wrong, or the volume is missing. Nothing can be scored. | **Halt the entire freeze run loudly.** Do not mark individual windows as failed, because the fault is not theirs. Scoring nothing and saying so beats marking fifty windows SCORING FAILED and burying the one real cause. |
+| `SnapshotNotFoundForDateError`, one target date is absent | Local. The record is otherwise running; one day did not land. | **Record that single window as SCORING FAILED and continue.** Other windows are unaffected and must still be scored. |
+
+The asymmetry matters because the two look identical from inside a single
+window's evaluation and are completely different operationally. One is a broken
+pipeline, the other is one bad day.
 
 ### D7.2 The four states a window can be in
 
@@ -1110,6 +1140,29 @@ bandwidth may fall below one grid cell width, 8.4 km**, the east to west
 dimension, being the smaller of the two and therefore binding for an isotropic
 kernel. This is written here before that model exists so the lesson is
 inherited rather than rediscovered through a second failed pre-registration.
+
+**The neighbour count is a new free parameter and gets the same scrutiny.** The
+floor transfers cleanly, but whatever controls how tightly the kernel draws in
+dense regions, most likely a neighbour count k in a k-th nearest neighbour
+scaling, is new. It did not exist for the fixed kernel and it has not been
+through anything. Left alone it becomes the second hand-picked parameter in a
+project that has now twice had to unpick the first.
+
+It is therefore subject to the same three requirements the bandwidth ended up
+under:
+
+1. **Selected by a stated rule on fit-period data only**, never on scored
+   windows. The same leave-one-out likelihood machinery applies.
+2. **A sensitivity curve recorded to disk**, in the style of the depth
+   boundary's 0.7x to 1.5x band and the bandwidth's own candidate sweep. An
+   optimum without a sensitivity curve is a number, not a result.
+3. **Checked for whether the optimum is interior or on a boundary**, and stated
+   as such. The fixed kernel's optimum turned out to sit on the feasibility
+   edge, which was a finding about the grid rather than a fitted value, and the
+   same question has to be asked of k rather than assumed away.
+
+If k lands on a boundary too, that is a second finding about the grid, not a
+number to quietly report as though it were chosen freely.
 
 **Why a proportion rather than a single window's quantile.** One extreme
 quantile is unremarkable; the calibration only means anything in aggregate. The
