@@ -88,7 +88,9 @@ git are what make the timestamps externally checkable.
    is indistinguishable from fraud to a reader.
 2. **History is audited in CI.** A test walks the full git history and asserts
    every forecast's timestamp precedes its window. Commit timestamps alone are
-   forgeable, so an Actions run id and an OpenTimestamps proof are recorded too.
+   forgeable, so a GitHub Actions run id is recorded too. A third, Bitcoin
+   anchored proof was built and later removed; see [DECISIONS.md](DECISIONS.md)
+   section D10 for why.
 3. **Scoring reads only committed bytes.** The frozen evaluation catalogue ships
    next to the score, so anyone re-running gets the same number.
 

@@ -229,7 +229,10 @@ much harder to see.
 
 Writes the forecast plus a manifest recording model version, input catalogue
 hash, grid hash, window start and end, code commit, and **GitHub Actions run
-ID**. Requests an **OpenTimestamps** attestation. Publishes at T minus 2 hours.
+ID**. Publishes at T minus 2 hours.
+
+A third, Bitcoin anchored attestation was requested here in an earlier
+revision of this design and later removed; see DECISIONS.md D10.
 
 ### 4.6 score
 
@@ -268,10 +271,10 @@ scheduler jitter costs nothing.
 
 A test walks the entire git history and asserts, for every published forecast,
 that its commit timestamp precedes its window start, **and** that its recorded
-Actions run ID and OpenTimestamps proof both verify.
+Actions run ID verifies.
 
-Commit timestamps alone are forgeable, so the commit check is the weakest of the
-three and is treated as a cheap first pass rather than as proof. This test
+Commit timestamps alone are forgeable, so the commit check is the weaker of the
+two and is treated as a cheap first pass rather than as proof. This test
 failing is a project-level emergency.
 
 ### Rule 3: scoring reads only committed bytes
@@ -373,9 +376,9 @@ Evaluation running on closed windows. Health check live and proven to fire.
 Not linked from the site.
 
 Done when: **14 consecutive days of unattended operation with zero manual
-intervention**, the history audit passes over the full record including
-OpenTimestamps verification, and the health check has been deliberately
-triggered at least once to prove it alerts.
+intervention**, the history audit passes over the full record, and the
+health check has been deliberately triggered at least once to prove it
+alerts.
 
 ---
 
@@ -433,8 +436,9 @@ visible.
 
 - 14 consecutive days unattended, zero manual intervention, before the site
   links to anything.
-- Every forecast's existence before its window provably established by Actions
-  run ID and OpenTimestamps, not commit metadata alone.
+- Every forecast's existence before its window provably established by an
+  Actions run ID, not commit metadata alone. (A third, Bitcoin anchored proof
+  was also built and later removed; see DECISIONS.md D10.)
 - Baseline scored on both horizons and both strata, skill reported rather than
   raw likelihood alone.
 - A reader can clone the repo and reproduce any published score from committed

@@ -88,10 +88,12 @@ Kaikoura sequences.
 So the honest statement is that the cut removes between a tenth and a half of
 national recorded seismicity depending on the year, and 41% over the window this
 decision was measured on. Regenerate with
-`scripts/measurements/exclusion_trend.py`. The catalogue is not complete in those cells, the
-incompleteness is not stable over time (Kermadec Mc measured at 3.2, 3.4, 4.3,
-2.7 and 3.1 in 2005, 2010, 2015, 2020 and 2025), and forecasting a magnitude
-threshold below the completeness of the region you are forecasting produces
+`scripts/measurements/exclusion_trend.py`.
+
+**Why those cells are cut at all.** The catalogue is not complete in them, that
+incompleteness is not stable over time (Kermadec Mc measured 3.2, 3.4, 4.3, 2.7
+and 3.1 in 2005, 2010, 2015, 2020 and 2025), and forecasting a magnitude
+threshold below the completeness of the ground you are forecasting produces
 numbers that mean nothing.
 
 **Honest caveat 1: unmeasurable cells.** The 93 cells that could not be measured
@@ -620,17 +622,78 @@ with no external input.
 
 The project's central claim is that a forecast existed before the window it
 describes. **Git commit timestamps alone do not establish this**, because both
-author and committer dates are settable by the committer. Three independent
+author and committer dates are settable by the committer. Two independent
 anchors are therefore recorded for every forecast:
 
 1. **GitHub Actions run ID** in the forecast manifest. Run start times are
    server-side timestamped by GitHub and retrievable through their API, so the
    claim becomes "run N executed at time T according to GitHub" rather than
    "the commit metadata says so".
-2. **OpenTimestamps proof**, a Bitcoin-anchored attestation over the forecast
-   file. A few bytes per forecast, verifiable by anyone, indefinitely, with no
-   trust in the author or in GitHub.
-3. **The commit itself**, which remains useful as a cheap first check.
+2. **The commit itself**, which remains useful as a cheap first check but is
+   the weaker of the two, since both the author date and the committer date
+   are fields the committer sets.
+
+### A third anchor, built, used, and then deliberately removed
+
+A third anchor was originally specified here: an **OpenTimestamps proof**, a
+Bitcoin-anchored attestation over the forecast file, verifiable by anyone,
+indefinitely, with no trust in the author or in GitHub. It was implemented in
+full in `eq/anchor.py`, and it worked. A real proof was submitted to the
+public calendar servers, verified locally, and read back correctly as
+"pending" and, on a later upgrade, "confirmed" once a Bitcoin attestation was
+merged into it. This was not a rejection on evidence, unlike D3 and D4a. It is
+recorded here for the same reason those are: so the decision and its actual
+reasoning survive, rather than the removal reading as a silent deletion from
+the git log.
+
+**Why it was removed anyway.** This project's threat model is a public GitHub
+repository whose push history and Actions run IDs are already server-side
+timestamped by a third party the author does not control. Against that
+threat model, a Bitcoin anchor buys additional resistance against a threat
+this project does not face: GitHub itself colluding with the author to
+backdate a commit. Nobody realistically expects that, and the two remaining
+anchors already establish everything a skeptical reader needs to check.
+
+Set against that marginal benefit, the anchor carried three concrete costs:
+
+- **A dependency.** `opentimestamps` and the network calendar servers it
+  talks to are one more thing that can be missing, broken, or unreachable on
+  whatever machine is trying to reproduce or extend this project.
+- **A pending-versus-confirmed state that complicates every reader of a
+  manifest.** A proof fresh out of `stamp()` is never Bitcoin anchored; it is
+  a calendar server's promise, and only becomes a real attestation hours
+  later once `upgrade()` is run again. `eq/anchor.py` carried real machinery,
+  `_PROOF_NOTES` among it, purely to keep that distinction from being
+  overstated. That is complexity a reader has to hold in their head for every
+  single forecast, forever, to get the claim right.
+- **A scheduled upgrade obligation that would otherwise leave proofs
+  permanently incomplete.** A proof that is never upgraded stays "pending"
+  forever, which is a weaker claim than the manifest appears to promise. Doing
+  this properly means a recurring job to walk every past proof and check
+  whether its calendar has completed the Bitcoin fold, indefinitely, for as
+  long as the project runs. That is an operational commitment on top of the
+  scheduler this project already depends on for daily and weekly forecasts,
+  and it was not a commitment this project's threat model justified taking
+  on.
+
+**What was removed and what stayed.** `eq/anchor.py` no longer imports
+`opentimestamps` and no longer exposes `stamp`, `proof_status`, `upgrade`, or
+the pending/confirmed statuses. `scripts/live_ots_stamp.py` and the committed
+`region/grid.parquet.ots` proof file are deleted. The `opentimestamps`
+dependency is gone from `pyproject.toml`. The SHA-256 of the forecast file in
+the manifest is **not** OpenTimestamps specific, is independent of it, and
+stays: it still lets anyone recompute a file's digest and compare it against
+the one recorded at publish time, which is the tamper-detection property the
+manifest exists to provide regardless of which timestamp anchors sit next to
+it.
+
+**What a reader loses.** Before an event is scored, the only proof that a
+forecast predates its window rests on GitHub's word (the Actions run) and the
+author's word (the commit). A reader who trusts neither, and who wants proof
+that depends on nobody, no longer has that option here. That is a real,
+named reduction in the strength of this project's central claim, accepted
+because the remaining two anchors are judged sufficient for a public git
+repository, not because the gap does not exist.
 
 **Information gain must never be reported without naming the benchmark's known
 weakness.** Wherever a skill score against the baseline is displayed, the same

@@ -12,15 +12,6 @@ dependencies = [
     # makes determinism a claim about the dependency set as much as about the
     # code, so this is declared explicitly rather than relied on transitively.
     "numpy>=1.26",
-    # eq.anchor's OpenTimestamps anchor, per D10. This is the `opentimestamps`
-    # library (python-opentimestamps), not `opentimestamps-client`: the CLI
-    # package imports bitcoin.rpc, which imports bitcoin.wallet, which loads
-    # OpenSSL via ctypes.util.find_library, which returns None on Windows and
-    # crashes on import before doing anything. eq.anchor talks to calendar
-    # servers directly through opentimestamps.calendar and never imports
-    # otsclient, so only this lighter dependency is needed and it works
-    # everywhere this project runs.
-    "opentimestamps>=0.4.5",
 ]
 
 [project.optional-dependencies]

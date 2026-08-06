@@ -136,9 +136,10 @@ not separate cleanly, say so publicly rather than picking a number.
   against the full catalogue once Phase 4 brings a scheduler, so the contracts
   are exercised somewhere automated rather than only on a developer machine.
 - The continuous integration workflow has now executed successfully and the
-  repository has a remote, so this item is closed. Rule 2 still needs the
-  Actions run ID and OpenTimestamps anchoring wired into the manifest before it
-  is stronger than commit metadata.
+  repository has a remote, so this item is closed. Rule 2 needed the Actions
+  run ID wired into the manifest before it was stronger than commit metadata
+  alone; that is done. A third, Bitcoin anchored proof was also built and
+  wired in, then deliberately removed; see DECISIONS.md D10 for why.
 - The UTC timezone pin lives in `dbt/profiles.yml`, not in the database file, so
   a client opening `data/eq.duckdb` directly gets local time. Consider pinning
   inside the database or moving derived dates upstream.

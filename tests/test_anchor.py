@@ -1,112 +1,23 @@
-"""Tests for eq.anchor: the D10 provenance manifest and the OpenTimestamps proof.
+"""Tests for eq.anchor: the D10 provenance manifest and hash-based tamper detection.
 
-Everything here is hermetic. Calendar servers are mocked by monkeypatching
-anchor.RemoteCalendar with a small fake, so the suite never depends on
-network reachability, external service uptime, or clock time (a real Bitcoin
-attestation is normally hours away from a fresh proof, which this suite
-cannot wait for and does not need to: the fake calendar can hand back a
-BitcoinBlockHeaderAttestation on demand to exercise the "confirmed" path).
-A real, live-network stamp against the actual calendar servers is exercised
-separately by scripts/live_ots_stamp.py, deliberately kept out of the test
-suite per the instruction that a live-network check belongs in scripts/, not
-in a test that has to run on every commit.
-
-The single property this file exists to pin down: a proof that has not been
-upgraded with a real Bitcoin attestation must never be reported, anywhere,
-as Bitcoin anchored. Every "pending" test below checks that explicitly rather
-than trusting the "confirmed" tests to imply it.
+DECISIONS.md D10 originally recorded three anchors: the commit, the GitHub
+Actions run ID, and a Bitcoin-anchored proof over the forecast file. The
+third anchor was removed; the reasoning is recorded in D10 itself, in the
+same place D3 and D4a record rejected approaches. This suite now covers what
+remains: the commit anchor, the CI anchor, and the SHA-256 based tamper
+check, which never depended on the third anchor and is unaffected by its
+removal.
 """
 
 from __future__ import annotations
 
-import hashlib
 import json
 import subprocess
 from datetime import datetime, timezone
-from pathlib import Path
 
 import pytest
 
-from opentimestamps.core.notary import BitcoinBlockHeaderAttestation, PendingAttestation
-from opentimestamps.core.op import OpSHA256
-from opentimestamps.core.timestamp import DetachedTimestampFile, Timestamp
-
 from eq import anchor, paths
-
-
-# --------------------------------------------------------------------------
-# Fakes standing in for live calendar servers.
-# --------------------------------------------------------------------------
-
-class _FakeCalendarPending:
-    """Mimics a calendar's immediate response to a fresh submission: a
-    Timestamp carrying only a PendingAttestation. This is what every real
-    calendar returns synchronously; nothing returns a Bitcoin attestation on
-    the spot."""
-
-    def __init__(self, url, user_agent=None):
-        self.url = url
-
-    def submit(self, digest, timeout=None):
-        ts = Timestamp(digest)
-        ts.attestations.add(PendingAttestation(self.url))
-        return ts
-
-    def get_timestamp(self, commitment, timeout=None):
-        from opentimestamps.calendar import CommitmentNotFoundError
-
-        raise CommitmentNotFoundError("still pending, nothing to upgrade to yet")
-
-
-class _FakeCalendarConfirms:
-    """A calendar whose get_timestamp() has completed the Bitcoin upgrade."""
-
-    def __init__(self, url, user_agent=None):
-        self.url = url
-
-    def submit(self, digest, timeout=None):
-        ts = Timestamp(digest)
-        ts.attestations.add(PendingAttestation(self.url))
-        return ts
-
-    def get_timestamp(self, commitment, timeout=None):
-        ts = Timestamp(commitment)
-        ts.attestations.add(BitcoinBlockHeaderAttestation(900_000))
-        return ts
-
-
-class _FakeCalendarAlwaysFails:
-    def __init__(self, url, user_agent=None):
-        self.url = url
-
-    def submit(self, digest, timeout=None):
-        raise ConnectionError(f"could not reach {self.url}")
-
-    def get_timestamp(self, commitment, timeout=None):
-        raise ConnectionError(f"could not reach {self.url}")
-
-
-def _mock_pending_calendar(monkeypatch):
-    monkeypatch.setattr(anchor, "RemoteCalendar", _FakeCalendarPending)
-
-
-def _mock_confirming_calendar(monkeypatch):
-    monkeypatch.setattr(anchor, "RemoteCalendar", _FakeCalendarConfirms)
-
-
-def _mock_failing_calendar(monkeypatch):
-    monkeypatch.setattr(anchor, "RemoteCalendar", _FakeCalendarAlwaysFails)
-
-
-def _write_confirmed_proof(target: Path, ots_path: Path, height: int = 900_000) -> None:
-    """Build a proof carrying a real BitcoinBlockHeaderAttestation directly,
-    without going through upgrade(), for tests that only care about the
-    "confirmed" branch of proof_status()/verify()."""
-    digest = hashlib.sha256(target.read_bytes()).digest()
-    ts = Timestamp(digest)
-    ts.attestations.add(BitcoinBlockHeaderAttestation(height))
-    detached = DetachedTimestampFile(OpSHA256(), ts)
-    anchor._write_ots(detached, ots_path)
 
 
 # --------------------------------------------------------------------------
@@ -125,7 +36,7 @@ def test_manifest_sha256_matches_actual_file_bytes(tmp_path):
         stratum="shallow",
     )
 
-    expected = hashlib.sha256(target.read_bytes()).hexdigest()
+    expected = anchor.sha256_file(target)
     assert manifest["sha256"] == expected
     assert len(manifest["sha256"]) == 64
 
@@ -188,7 +99,7 @@ def test_manifest_refuses_a_file_that_does_not_exist(tmp_path):
         )
 
 
-def test_manifest_commit_anchor_is_present_and_marked_weakest(tmp_path):
+def test_manifest_commit_anchor_is_present_and_marked_weaker(tmp_path):
     target = tmp_path / "forecast.parquet"
     target.write_bytes(b"payload")
 
@@ -210,7 +121,7 @@ def test_manifest_commit_anchor_is_present_and_marked_weakest(tmp_path):
 
     commit = manifest["anchors"]["commit"]
     assert commit["sha"] == expected_sha
-    assert "weakest" in commit["note"]
+    assert "weaker" in commit["note"]
 
 
 def test_manifest_ci_anchor_is_explicitly_absent_without_github_run_id(monkeypatch, tmp_path):
@@ -260,7 +171,10 @@ def test_manifest_ci_anchor_present_with_full_detail_under_github_actions(monkey
     assert ci["run_url"] == "https://github.com/jesseobrien/EQ-Project/actions/runs/4242424242"
 
 
-def test_manifest_opentimestamps_anchor_is_missing_before_stamp(tmp_path):
+def test_manifest_anchors_contain_only_commit_and_ci_run(tmp_path):
+    """The third D10 anchor is gone. This pins the manifest shape so a
+    reintroduction (accidental or otherwise) fails a test rather than
+    drifting back in silently."""
     target = tmp_path / "forecast.parquet"
     target.write_bytes(b"payload")
 
@@ -272,30 +186,7 @@ def test_manifest_opentimestamps_anchor_is_missing_before_stamp(tmp_path):
         stratum="shallow",
     )
 
-    ots = manifest["anchors"]["opentimestamps"]
-    assert ots["status"] == "missing"
-    assert ots["bitcoin_anchored"] is False
-
-
-def test_manifest_opentimestamps_anchor_pending_after_stamp_never_says_confirmed(monkeypatch, tmp_path):
-    _mock_pending_calendar(monkeypatch)
-    target = tmp_path / "forecast.parquet"
-    target.write_bytes(b"payload")
-    anchor.stamp(target)
-
-    manifest = anchor.manifest_for(
-        target,
-        window_start=datetime(2026, 8, 10, tzinfo=timezone.utc),
-        window_end=datetime(2026, 8, 17, tzinfo=timezone.utc),
-        model="baseline",
-        stratum="shallow",
-    )
-
-    ots = manifest["anchors"]["opentimestamps"]
-    assert ots["status"] == "pending"
-    assert ots["bitcoin_anchored"] is False
-    assert "NOT Bitcoin anchored" in ots["note"]
-    assert "Bitcoin anchored:" not in ots["note"]
+    assert set(manifest["anchors"].keys()) == {"commit", "ci_run"}
 
 
 # --------------------------------------------------------------------------
@@ -319,200 +210,107 @@ def test_write_manifest_leaves_no_temp_file(tmp_path):
 
 
 # --------------------------------------------------------------------------
-# stamp(): proof creation (mocked calendars)
+# sha256_bytes / sha256_file
 # --------------------------------------------------------------------------
 
-def test_stamp_creates_a_proof_file_next_to_the_target(monkeypatch, tmp_path):
-    _mock_pending_calendar(monkeypatch)
+def test_sha256_bytes_matches_hashlib():
+    import hashlib
+
+    data = b"some bytes to hash"
+    assert anchor.sha256_bytes(data) == hashlib.sha256(data).hexdigest()
+
+
+def test_sha256_file_reads_fresh_from_disk_every_call(tmp_path):
     target = tmp_path / "forecast.parquet"
-    target.write_bytes(b"payload")
+    target.write_bytes(b"version one")
+    first = anchor.sha256_file(target)
 
-    ots_path = anchor.stamp(target)
+    target.write_bytes(b"version two")
+    second = anchor.sha256_file(target)
 
-    assert ots_path == tmp_path / "forecast.parquet.ots"
-    assert ots_path.exists()
-    assert ots_path.stat().st_size > 0
-
-
-def test_stamp_refuses_to_overwrite_an_existing_proof(monkeypatch, tmp_path):
-    _mock_pending_calendar(monkeypatch)
-    target = tmp_path / "forecast.parquet"
-    target.write_bytes(b"payload")
-    anchor.stamp(target)
-
-    with pytest.raises(anchor.ProofExistsError):
-        anchor.stamp(target)
-
-
-def test_stamp_raises_if_every_calendar_fails(monkeypatch, tmp_path):
-    _mock_failing_calendar(monkeypatch)
-    target = tmp_path / "forecast.parquet"
-    target.write_bytes(b"payload")
-
-    with pytest.raises(anchor.OpenTimestampsSubmissionError):
-        anchor.stamp(target)
-
-    assert not (tmp_path / "forecast.parquet.ots").exists()
-
-
-def test_stamp_refuses_a_target_that_does_not_exist(monkeypatch, tmp_path):
-    _mock_pending_calendar(monkeypatch)
-    with pytest.raises(FileNotFoundError):
-        anchor.stamp(tmp_path / "nope.parquet")
+    assert first != second
+    assert second == anchor.sha256_file(target)
 
 
 # --------------------------------------------------------------------------
-# proof_status(): pending vs confirmed vs missing
+# verify(): tamper detection by SHA-256 comparison, independent of any
+# external anchor. This is what survives the removal of the third D10 anchor.
 # --------------------------------------------------------------------------
 
-def test_proof_status_missing_when_no_ots_file(tmp_path):
-    assert anchor.proof_status(tmp_path / "nothing.ots") == "missing"
-
-
-def test_proof_status_pending_for_a_freshly_created_proof(monkeypatch, tmp_path):
-    """The central regression this module exists to prevent: a proof that was
-    just created must read as pending, never confirmed, because no calendar
-    server issues a Bitcoin attestation synchronously."""
-    _mock_pending_calendar(monkeypatch)
-    target = tmp_path / "forecast.parquet"
-    target.write_bytes(b"payload")
-    ots_path = anchor.stamp(target)
-
-    assert anchor.proof_status(ots_path) == "pending"
-    assert anchor.proof_status(ots_path) != "confirmed"
-
-
-def test_proof_status_confirmed_requires_a_bitcoin_attestation(tmp_path):
-    target = tmp_path / "forecast.parquet"
-    target.write_bytes(b"payload")
-    ots_path = tmp_path / "forecast.parquet.ots"
-    _write_confirmed_proof(target, ots_path)
-
-    assert anchor.proof_status(ots_path) == "confirmed"
-
-
-# --------------------------------------------------------------------------
-# verify(): tamper detection and the pending/confirmed distinction
-# --------------------------------------------------------------------------
-
-def test_verify_succeeds_against_an_untampered_file(monkeypatch, tmp_path):
-    _mock_pending_calendar(monkeypatch)
+def test_verify_succeeds_against_an_untampered_file(tmp_path):
     target = tmp_path / "forecast.parquet"
     target.write_bytes(b"original bytes")
-    ots_path = anchor.stamp(target)
+    recorded_sha256 = anchor.sha256_file(target)
 
-    result = anchor.verify(target, ots_path)
+    result = anchor.verify(target, recorded_sha256)
 
-    assert result["file_matches_proof"] is True
-    assert result["status"] == "pending"
-    assert result["bitcoin_anchored"] is False
+    assert result["file_matches"] is True
+    assert result["status"] == "ok"
+    assert result["actual_sha256"] == recorded_sha256
 
 
-def test_verify_detects_a_single_byte_tamper(monkeypatch, tmp_path):
-    _mock_pending_calendar(monkeypatch)
+def test_verify_detects_a_single_byte_tamper(tmp_path):
     target = tmp_path / "forecast.parquet"
     target.write_bytes(b"original bytes, thirty two long")
-    ots_path = anchor.stamp(target)
+    recorded_sha256 = anchor.sha256_file(target)
 
     tampered = bytearray(target.read_bytes())
     tampered[0] ^= 0xFF
     target.write_bytes(bytes(tampered))
 
-    result = anchor.verify(target, ots_path)
+    result = anchor.verify(target, recorded_sha256)
 
-    assert result["file_matches_proof"] is False
+    assert result["file_matches"] is False
     assert result["status"] == "tampered"
-    assert result["bitcoin_anchored"] is False
-    assert result["actual_sha256"] != result["proof_sha256"]
+    assert result["actual_sha256"] != result["expected_sha256"]
 
 
-def test_verify_reports_pending_proof_as_not_bitcoin_anchored(monkeypatch, tmp_path):
-    _mock_pending_calendar(monkeypatch)
-    target = tmp_path / "forecast.parquet"
-    target.write_bytes(b"payload")
-    ots_path = anchor.stamp(target)
+def test_verify_missing_file_reports_missing_not_tampered(tmp_path):
+    target = tmp_path / "never_written.parquet"
 
-    result = anchor.verify(target, ots_path)
+    result = anchor.verify(target, "0" * 64)
 
-    assert result["status"] != "confirmed"
-    assert result["bitcoin_anchored"] is False
-    assert "Bitcoin anchored:" not in result["reason"]
-
-
-def test_verify_reports_confirmed_only_with_a_real_bitcoin_attestation(tmp_path):
-    target = tmp_path / "forecast.parquet"
-    target.write_bytes(b"payload")
-    ots_path = tmp_path / "forecast.parquet.ots"
-    _write_confirmed_proof(target, ots_path)
-
-    result = anchor.verify(target, ots_path)
-
-    assert result["file_matches_proof"] is True
-    assert result["status"] == "confirmed"
-    assert result["bitcoin_anchored"] is True
-
-
-def test_verify_missing_proof_reports_missing_not_tampered(tmp_path):
-    target = tmp_path / "forecast.parquet"
-    target.write_bytes(b"payload")
-
-    result = anchor.verify(target, tmp_path / "forecast.parquet.ots")
-
-    assert result["file_matches_proof"] is False
+    assert result["file_matches"] is False
     assert result["status"] == "missing"
-    assert result["bitcoin_anchored"] is False
 
 
-# --------------------------------------------------------------------------
-# upgrade(): the path that later completes a pending proof
-# --------------------------------------------------------------------------
-
-def test_upgrade_is_a_no_op_while_still_pending(monkeypatch, tmp_path):
-    _mock_pending_calendar(monkeypatch)
+def test_verify_round_trips_through_a_real_manifest(tmp_path):
+    """The intended usage: record sha256 via manifest_for at publish time,
+    verify against it later."""
     target = tmp_path / "forecast.parquet"
-    target.write_bytes(b"payload")
-    ots_path = anchor.stamp(target)
+    target.write_bytes(b"a real forecast payload")
 
-    result = anchor.upgrade(ots_path)
+    manifest = anchor.manifest_for(
+        target,
+        window_start=datetime(2026, 8, 10, tzinfo=timezone.utc),
+        window_end=datetime(2026, 8, 17, tzinfo=timezone.utc),
+        model="baseline",
+        stratum="shallow",
+    )
 
-    assert result["changed"] is False
-    assert result["status"] == "pending"
-    assert anchor.proof_status(ots_path) == "pending"
+    result = anchor.verify(target, manifest["sha256"])
+    assert result["status"] == "ok"
 
-
-def test_upgrade_completes_a_proof_once_the_calendar_has_confirmed(monkeypatch, tmp_path):
-    _mock_pending_calendar(monkeypatch)
-    target = tmp_path / "forecast.parquet"
-    target.write_bytes(b"payload")
-    ots_path = anchor.stamp(target)
-    assert anchor.proof_status(ots_path) == "pending"
-
-    _mock_confirming_calendar(monkeypatch)
-    result = anchor.upgrade(ots_path)
-
-    assert result["changed"] is True
-    assert result["status"] == "confirmed"
-    # Re-read from disk: the upgrade must have been persisted, not just held
-    # in memory for this call's return value.
-    assert anchor.proof_status(ots_path) == "confirmed"
+    target.write_bytes(b"a real forecast payload, tampered")
+    result = anchor.verify(target, manifest["sha256"])
+    assert result["status"] == "tampered"
 
 
 # --------------------------------------------------------------------------
-# The wording contract itself: pending is never described as Bitcoin
-# anchored anywhere this module produces text.
+# The third anchor's surface is gone, not merely unused.
 # --------------------------------------------------------------------------
 
-def test_pending_note_never_claims_bitcoin_anchoring():
-    pending_note = anchor._PROOF_NOTES[anchor.STATUS_PENDING]
-    assert "NOT Bitcoin anchored" in pending_note
-    assert "Bitcoin anchored:" not in pending_note
-
-
-def test_missing_note_never_claims_bitcoin_anchoring():
-    missing_note = anchor._PROOF_NOTES[anchor.STATUS_MISSING]
-    assert "Bitcoin anchored" not in missing_note
-
-
-def test_confirmed_note_is_the_only_one_asserting_bitcoin_anchoring():
-    confirmed_note = anchor._PROOF_NOTES[anchor.STATUS_CONFIRMED]
-    assert confirmed_note.startswith("Bitcoin anchored:")
+def test_no_third_anchor_surface_remains_on_the_module():
+    removed = {
+        "stamp",
+        "proof_status",
+        "upgrade",
+        "STATUS_PENDING",
+        "STATUS_CONFIRMED",
+        "ProofExistsError",
+        "CorruptProofError",
+        "DEFAULT_CALENDAR_URLS",
+        "PROOF_SUFFIX",
+    }
+    present = removed & set(dir(anchor))
+    assert not present, f"removed anchor surface still present: {present}"
