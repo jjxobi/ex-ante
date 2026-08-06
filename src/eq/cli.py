@@ -6,6 +6,7 @@ import argparse
 from datetime import date, datetime, timezone
 
 from eq import ingest, paths, region, revisions
+from eq import snapshots as snapshot_selection
 
 
 def _as_date(text: str) -> date:
@@ -50,11 +51,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "diff":
         observed_at = args.date or datetime.now(timezone.utc).date()
-        snapshots = sorted(paths.SNAPSHOT_DIR.glob("catalogue-*.parquet"))
-        if len(snapshots) < 2:
+        # Date-shaped only. A bare catalogue-*.parquet glob also matches
+        # catalogue-ci.parquet, and because "c" sorts after "2" the lexical
+        # maximum returns the CI slice in preference to every real dated
+        # catalogue. That is the trap recorded in D4b, verified against DuckDB.
+        dated = sorted(paths.SNAPSHOT_DIR.glob(snapshot_selection.DATED_GLOB))
+        if len(dated) < 2:
             print("a diff needs two snapshots; fewer than two are present, skipping")
             return 0
-        previous, current = snapshots[-2], snapshots[-1]
+        previous, current = dated[-2], dated[-1]
         destination = paths.DATA_DIR / "revisions" / f"revisions-{observed_at.isoformat()}.parquet"
         written = revisions.write_daily_diff(previous, current, destination, observed_at)
         print(f"wrote {written} revision rows to {destination}")

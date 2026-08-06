@@ -1097,6 +1097,20 @@ is treated as kernel **form** rather than kernel width. The remedy is a
 different kernel, registered as a separate model scored on identical windows,
 never a silent modification of the baseline.
 
+**A constraint the successor model inherits, specified before it is built.**
+The grid representability ceiling that forced the fixed kernel to a boundary
+solution applies just as much to an adaptive bandwidth. A scale set by the
+distance to the k-th nearest neighbour will shrink below one cell width in
+dense regions, exactly as the fixed kernel did everywhere, and there it will be
+measuring grid alignment rather than spatial scale for precisely the same
+reason.
+
+So the adaptive model carries the same floor from the start: **no per-point
+bandwidth may fall below one grid cell width, 8.4 km**, the east to west
+dimension, being the smaller of the two and therefore binding for an isotropic
+kernel. This is written here before that model exists so the lesson is
+inherited rather than rediscovered through a second failed pre-registration.
+
 **Why a proportion rather than a single window's quantile.** One extreme
 quantile is unremarkable; the calibration only means anything in aggregate. The
 first scored week returned 0.0020 and that alone justified nothing.
