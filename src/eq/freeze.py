@@ -302,7 +302,7 @@ def _require_any_dated_snapshot(directory: Path) -> None:
     lookup has no reason to care which. Only this module needs the
     distinction, per D7.2's branch table, so it is drawn here.
 
-    This reuses `eq.snapshots`'s own directory listing (`_dated_snapshots`)
+    This reuses `eq.snapshots`'s own directory listing (`dated_snapshots`)
     rather than re-deriving the glob and date-shaped filename pattern D4b
     made load bearing, and it deliberately avoids the recency selector `eq.snapshots`
     also offers: that one exists to pick the most recent snapshot for use, a

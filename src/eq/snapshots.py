@@ -12,10 +12,18 @@ and must never be confused:
                          is "what did the catalogue look like on this specific
                          day", and any other day's answer is wrong.
 
-They live in one module so the contrast is visible, and they are deliberately
-not built on a shared helper. Reusing or lightly adapting the newest-snapshot
-logic for the by-date case is the kind of shortcut that reads as fine in review
-and quietly produces a T+45 score computed against the wrong day's catalogue.
+They live in one module so the contrast is visible.
+
+WHAT THEY SHARE AND WHAT THEY DO NOT. Both call `dated_snapshots` to enumerate,
+so there is exactly one definition of what counts as a dated snapshot and one
+place that globs or parses a filename. What they do not share is any SELECTION
+logic: deciding which snapshot to return is written separately in each, because
+reusing or lightly adapting the newest-snapshot rule for the by-date case is the
+shortcut that reads as fine in review and quietly produces a T+45 score computed
+against the wrong day's catalogue.
+
+That is the line worth holding. One definition of the data, two independent
+contracts over it.
 
 WHY snapshot_for_date REFUSES TO SUBSTITUTE. D7.2 requires the evaluation freeze
 to fail loudly when the exact dated snapshot is missing. Falling back to the
@@ -75,21 +83,10 @@ def dated_snapshots(directory: Path | None = None) -> list[tuple[date, Path]]:
 
     Note this returns snapshots for INSPECTION. Choosing one to use goes
     through newest_snapshot or snapshot_for_date, which carry the contracts.
+    Both of those call this function rather than repeating its glob or its
+    filename pattern, so there is one definition here and not three that
+    happen to agree.
     """
-    return _dated_snapshots(directory)
-
-
-def has_any_dated_snapshot(directory: Path | None = None) -> bool:
-    """Whether any date-shaped snapshot exists at all.
-
-    The question that separates a systemic failure, nothing has ever been
-    ingested, from a local one, a particular day did not land. D7.2 requires
-    those to produce different outcomes.
-    """
-    return bool(_dated_snapshots(directory))
-
-
-def _dated_snapshots(directory: Path | None = None) -> list[tuple[date, Path]]:
     directory = paths.SNAPSHOT_DIR if directory is None else Path(directory)
     found: list[tuple[date, Path]] = []
     for path in directory.glob(DATED_GLOB):
@@ -99,6 +96,18 @@ def _dated_snapshots(directory: Path | None = None) -> list[tuple[date, Path]]:
         year, month, day = (int(part) for part in match.groups())
         found.append((date(year, month, day), path))
     return sorted(found)
+
+
+def has_any_dated_snapshot(directory: Path | None = None) -> bool:
+    """Whether any date-shaped snapshot exists at all.
+
+    The question that separates a systemic failure, nothing has ever been
+    ingested, from a local one, a particular day did not land. D7.2 requires
+    those to produce different outcomes.
+    """
+    return bool(dated_snapshots(directory))
+
+
 
 
 def newest_snapshot(directory: Path | None = None) -> Path:
@@ -111,7 +120,7 @@ def newest_snapshot(directory: Path | None = None) -> Path:
     Sorted by the date parsed out of the filename rather than by the filename
     itself, so a non-date-shaped file cannot win on lexical ordering.
     """
-    found = _dated_snapshots(directory)
+    found = dated_snapshots(directory)
     if not found:
         raise NoSnapshotsError(
             f"no date-shaped snapshot in "
@@ -127,11 +136,11 @@ def snapshot_for_date(target: date, directory: Path | None = None) -> Path:
     design, per D7.2. If you find yourself wanting one, the answer is to report
     the window as SCORING FAILED, not to score it against a different day.
     """
-    for snapshot_date, path in _dated_snapshots(directory):
+    for snapshot_date, path in dated_snapshots(directory):
         if snapshot_date == target:
             return path
 
-    available = [str(d) for d, _ in _dated_snapshots(directory)]
+    available = [str(d) for d, _ in dated_snapshots(directory)]
     raise SnapshotNotFoundForDateError(
         f"no snapshot for {target}. Refusing to substitute a nearby date, "
         f"because that would make a frozen evaluation catalogue mean something "

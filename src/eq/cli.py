@@ -55,7 +55,7 @@ def main(argv: list[str] | None = None) -> int:
         # catalogue-ci.parquet, and because "c" sorts after "2" the lexical
         # maximum returns the CI slice in preference to every real dated
         # catalogue. That is the trap recorded in D4b, verified against DuckDB.
-        dated = sorted(paths.SNAPSHOT_DIR.glob(snapshot_selection.DATED_GLOB))
+        dated = [path for _, path in snapshot_selection.dated_snapshots()]
         if len(dated) < 2:
             print("a diff needs two snapshots; fewer than two are present, skipping")
             return 0

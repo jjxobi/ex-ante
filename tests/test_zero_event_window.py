@@ -19,7 +19,8 @@ import pathlib
 
 import pytest
 
-from eq import baseline, expander, score, storage
+from eq import baseline, expander, region, score, storage
+from eq.masked import MaskedCount
 
 FIXTURE = pathlib.Path(__file__).parent / "fixtures" / "catalogue-fit-window.parquet"
 START = dt.datetime(2026, 7, 20, tzinfo=dt.timezone.utc)
@@ -73,14 +74,80 @@ def test_a_populated_window_marks_everything_applicable():
         assert test.applicable is True
 
 
-def test_the_n_test_can_never_be_marked_inapplicable():
-    """A guard on the guard.
+def _score_result(n_events_used, **tests):
+    """Build a ScoreResult directly, to exercise the invariant in isolation."""
+    mask = region.grid_hash()
+    defaults = {
+        "n_test": score.ConsistencyTestResult(
+            "N", 0.0, (1.0, 1.0), applicable=True, conditions_on_observations=False
+        ),
+        "s_test": score.ConsistencyTestResult("S", 0.0, 1.0, applicable=n_events_used > 0),
+        "m_test": score.ConsistencyTestResult("M", 0.0, 1.0, applicable=n_events_used > 0),
+        "l_test": score.ConsistencyTestResult("L", 0.0, 1.0, applicable=n_events_used > 0),
+    }
+    defaults.update(tests)
+    return score.ScoreResult(
+        window_start=START,
+        window_end=END,
+        expected_count=MaskedCount(1.0, mask),
+        observed_count=MaskedCount(float(n_events_used), mask),
+        n_events_used=n_events_used,
+        n_out_of_region=0,
+        n_above_mmax=0,
+        n_below_mmin=0,
+        **defaults,
+    )
 
-    Marking N inapplicable would discard the one test that still means
-    something on an empty window, so the type refuses it outright.
+
+def test_an_unconditional_test_may_not_be_marked_inapplicable():
+    """The exempt side of the boundary, enforced structurally.
+
+    A test that does not condition on the observed events stays meaningful at
+    zero, so marking it inapplicable would discard the one result that still
+    says something. Enforced by the declared property, not by recognising the
+    name "N", so a future count-based test gets the same protection.
     """
-    with pytest.raises(ValueError, match="always applicable"):
-        score.ConsistencyTestResult("N", 0.0, 1.0, applicable=False)
+    with pytest.raises(ValueError, match="conditions_on_observations"):
+        _score_result(
+            0,
+            n_test=score.ConsistencyTestResult(
+                "N", 0.0, (1.0, 1.0), applicable=False, conditions_on_observations=False
+            ),
+        )
+
+
+def test_a_conditional_test_may_not_be_applicable_on_an_empty_window():
+    """The original bug, now refused at construction rather than merely tested."""
+    with pytest.raises(ValueError, match="undefined, not passing"):
+        _score_result(
+            0,
+            s_test=score.ConsistencyTestResult("S", 0.0, 1.0, applicable=True),
+        )
+
+
+def test_a_future_unconditional_test_is_exempt_without_being_named():
+    """The symmetry that name-based exemption would not have given.
+
+    A hypothetical fifth test that compares counts rather than distributions
+    declares itself unconditional and is accepted as applicable on an empty
+    window, with nobody having added a case for it anywhere.
+    """
+    result = _score_result(
+        0,
+        m_test=score.ConsistencyTestResult(
+            "count-based-successor",
+            0.0,
+            0.5,
+            applicable=True,
+            conditions_on_observations=False,
+        ),
+    )
+    assert result.m_test.applicable is True
+
+
+def test_conditions_on_observations_defaults_to_the_safe_direction():
+    """Forgetting to declare should lose information, never fabricate a pass."""
+    assert score.ConsistencyTestResult("X", 0.0, 1.0).conditions_on_observations is True
 
 
 def test_applicable_defaults_to_true_so_an_omission_is_visible():
@@ -125,9 +192,10 @@ def test_every_conditional_test_is_inapplicable_on_an_empty_window(empty_window_
 
     for field_name in names:
         test = getattr(empty_window_result, field_name)
-        if test.name == "N":
+        if not test.conditions_on_observations:
             assert test.applicable is True, (
-                "the N test is informative on an empty window and must stay applicable"
+                f"{field_name} declares itself unconditional, so it stays "
+                f"applicable on an empty window"
             )
         else:
             assert test.applicable is False, (

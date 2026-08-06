@@ -39,6 +39,7 @@ twice reproduces the same quantiles, not merely the same observed statistic.
 
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 
@@ -73,20 +74,33 @@ class ConsistencyTestResult:
     observed_statistic: float
     quantile: object
 
-    # False when the test had nothing to work with, which for S, M and L means
-    # the window contained no observed events. A non-applicable result carries a
-    # quantile of 1.0 straight out of pyCSEP, and 1.0 is the most passing value
-    # there is, so anything rendering or aggregating these MUST check this flag
-    # rather than reading the quantile. Defaults True so an omission is a
-    # visible bug rather than a silent suppression.
+    # False when the test had nothing to work with, which for a conditional
+    # test means the window contained no observed events. A non-applicable
+    # result carries a quantile of 1.0 straight out of pyCSEP, and 1.0 is the
+    # most passing value there is, so anything rendering or aggregating these
+    # MUST read this flag rather than the quantile.
     applicable: bool = True
 
-    def __post_init__(self) -> None:
-        if not self.applicable and self.name == "N":
-            raise ValueError(
-                "the N test is always applicable: observing zero events against "
-                "a non-zero expectation is informative, not undefined"
-            )
+    # Whether this test conditions on the observed events.
+    #
+    # This is what actually decides the exemption, and it is a declared
+    # property rather than a check against the test's name. S, M and L all
+    # condition: they ask where the events fell, what magnitudes they had, and
+    # how likely that set was. N does not: it compares a count against an
+    # expectation, which stays meaningful when the count is zero.
+    #
+    # Drawn this way so the boundary is symmetric. A future count-based test
+    # that should also stay applicable at zero observed events declares itself
+    # unconditional and is exempt automatically, with nobody remembering to add
+    # a case. Naming N specifically would future-proof the conditional side and
+    # leave the exempt side needing manual extension, which is the same risk on
+    # the other boundary of the same distinction.
+    #
+    # Defaults True, the conservative direction: a test type whose author
+    # forgets to declare itself is treated as conditional and marked
+    # inapplicable on an empty window, losing information rather than
+    # fabricating a pass.
+    conditions_on_observations: bool = True
 
 
 @dataclass(frozen=True)
@@ -127,6 +141,43 @@ class ScoreResult:
     n_out_of_region: int
     n_above_mmax: int
     n_below_mmin: int
+
+    def __post_init__(self) -> None:
+        """Enforce the empty-window rule for every test, structurally.
+
+        D7.1a: a test that conditions on the observed events is UNDEFINED on a
+        window with none, not passing. pyCSEP returns a quantile of 1.0 in that
+        case, the most passing value available, so getting this wrong publishes
+        a perfect score on no evidence.
+
+        Checked here rather than at each construction site, and over whatever
+        consistency tests this dataclass actually carries rather than over the
+        four it carries today. A fifth test added later is covered without
+        anyone remembering to extend anything, in both directions:
+
+          conditional test  + zero events -> must be inapplicable
+          conditional test  + some events -> must be applicable
+          unconditional test, either way  -> must be applicable
+
+        The last line is why the exemption is a declared property rather than a
+        check against the name "N". A future count-based test declares itself
+        unconditional and is exempt automatically.
+        """
+        for field in dataclasses.fields(self):
+            test = getattr(self, field.name)
+            if not isinstance(test, ConsistencyTestResult):
+                continue
+            expected = (not test.conditions_on_observations) or self.n_events_used > 0
+            if test.applicable is not expected:
+                raise ValueError(
+                    f"{field.name} ({test.name}) reports applicable="
+                    f"{test.applicable} on a window with {self.n_events_used} "
+                    f"observed events, but conditions_on_observations="
+                    f"{test.conditions_on_observations} requires "
+                    f"applicable={expected}. A conditional test on an empty "
+                    f"window is undefined, not passing; pyCSEP returns 1.0 for "
+                    f"that case. See DECISIONS.md D7.1a."
+                )
 
     def n_test_comparison(self) -> Comparison:
         """Expected vs observed count, both required to carry the same
@@ -384,6 +435,10 @@ def score(
             float(n_result.observed_statistic),
             tuple(float(q) for q in n_result.quantile),
             applicable=True,
+            # The N test compares a count against an expectation, which stays
+            # meaningful when the count is zero. It is the exemption, and it
+            # declares itself rather than being recognised by name.
+            conditions_on_observations=False,
         ),
         s_test=ConsistencyTestResult(
             "S",
