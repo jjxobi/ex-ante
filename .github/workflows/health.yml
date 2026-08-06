@@ -1,0 +1,82 @@
+name: health
+
+# Notices when the daily forecast workflow has stopped, before a reader has
+# to. Design spec section 4.7: "Fails if the newest forecast is more than 48
+# hours old, opening or updating a GitHub issue." The risk stated there:
+# GitHub Actions disables a scheduled workflow after roughly 60 days of
+# repository inactivity, and that disabling is silent, which is fatal for a
+# project whose entire premise is uninterrupted daily operation.
+#
+# Runs on its own schedule, separate from forecast.yml, so a check that only
+# ran as a step of the workflow it is supposed to detect the silence of
+# would never fire; a workflow that has been disabled does not run its own
+# health check either.
+#
+# eq.health does not talk to GitHub itself (see src/eq/health.py's module
+# docstring): it returns a healthy flag plus fully formed issue title/body
+# text, and this workflow is where that text actually becomes a GitHub
+# issue, found or created by searching for eq.health.ISSUE_MARKER embedded
+# in the issue body, so repeat failures update one issue rather than opening
+# a new one every run, and a recovery closes it.
+on:
+  schedule:
+    - cron: "30 6 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
+      - name: Run the health check
+        id: health
+        run: |
+          set +e
+          python -m eq.cli health > health.json
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          set -e
+          cat health.json
+
+      - name: Open or update an issue if unhealthy
+        if: steps.health.outputs.exit_code != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          TITLE=$(python -c "import json; print(json.load(open('health.json'))['issue_title'])")
+          MARKER=$(python -c "import json; print(json.load(open('health.json'))['issue_marker'])")
+          BODY=$(python -c "import json; print(json.load(open('health.json'))['issue_body'])")
+          EXISTING=$(gh issue list --state open --search "$MARKER in:body" --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi
+
+      - name: Close a previously open issue once healthy again
+        if: steps.health.outputs.exit_code == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          MARKER=$(python -c "import json; print(json.load(open('health.json'))['issue_marker'])")
+          REASON=$(python -c "import json; print(json.load(open('health.json'))['reason'])")
+          EXISTING=$(gh issue list --state open --search "$MARKER in:body" --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "Healthy again: $REASON"
+            gh issue close "$EXISTING"
+          fi

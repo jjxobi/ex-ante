@@ -39,6 +39,18 @@ MEASUREMENTS_DIR = REPO_ROOT / "scripts" / "measurements"
 # per scored window artifact D7 requires.
 EVALUATION_CATALOGUE_DIR = REPO_ROOT / "evaluation"
 
+# Committed, per the design spec section 6 repository layout. A forecast has
+# to predate its window in the public git history (D10, D11), so the file has
+# to be committed, which rules out data/ the same way it rules out
+# EVALUATION_CATALOGUE_DIR and REGION_DIR above.
+FORECASTS_DIR = REPO_ROOT / "forecasts"
+
+# Committed static JSON a site reads. Regenerated every publication cycle from
+# already-committed forecasts, manifests and scores, so it carries no
+# information that is not independently reconstructible from the rest of the
+# repository.
+SITE_DIR = REPO_ROOT / "site"
+
 
 def ensure_dirs() -> None:
     """Create every data directory this project writes to."""
