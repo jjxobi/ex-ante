@@ -67,6 +67,24 @@
   code { font-family: var(--mono); font-size: .88em; }
   a { color: inherit; text-decoration-color: var(--muted); text-underline-offset: 3px; }
   a:hover { text-decoration-color: currentColor; }
+  a:focus-visible, :focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px;
+  }
+
+  /* The proof link is the only interactive element inside the table. Padded out
+     to clear the 24px minimum target, with matching negative margin so the row
+     height does not change. */
+  td.proof a { display: inline-block; padding: 7px 10px; margin: -7px -10px; }
+
+  /* Failure is not emptiness. When a payload cannot be loaded the page must say
+     so rather than fall through to "no window has opened yet", which would be a
+     confident false claim about the record at the exact moment the page cannot
+     see it. */
+  .alert { background: var(--card); border: 1px solid var(--warn); border-radius: 10px;
+           padding: 20px 22px; margin: 32px 0 0; }
+  .alert p { margin: 6px 0 0; color: var(--muted); max-width: 66ch; }
+  .alert .paths { font-family: var(--mono); font-size: .8rem; margin-top: 10px; }
+  td.failed { white-space: normal; color: var(--muted); padding: 22px 12px; }
 
   .note { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
           padding: 22px 24px; margin: 28px 0; }
@@ -76,6 +94,17 @@
              color: var(--warn); font-weight: 650; margin-bottom: 10px; }
   footer { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; }
   .loading { color: var(--muted); padding: 24px 0; }
+
+  /* The headline is seven characters today, which is the only reason a fixed
+     3.1rem survived narrow viewports. Stepping the scale down means that stays
+     true if the wording ever changes. */
+  @media (max-width: 560px) {
+    header { padding: 48px 0 32px; }
+    h1 { font-size: 2.3rem; }
+    h2 { font-size: 1.3rem; margin-top: 44px; }
+    .lede { font-size: 1.05rem; }
+    .wrap { padding: 0 16px 72px; }
+  }
 </style>
 </head>
 <body>
@@ -89,6 +118,8 @@
   <p class="defn">ex ante &middot; before the event. The opposite of how a backtest reasons.</p>
 </header>
 
+<main>
+
 <h2>Why this exists</h2>
 <p class="sub">Every forecasting portfolio shows a backtest. Backtests are cheap and
 unfalsifiable: you fit a model to history, tune until the number looks good, and publish the
@@ -99,19 +130,21 @@ to publish a forecast for a window that has already started, so a missed window 
 and shows up below as a permanent gap. There is no version of this record in which a bad
 forecast can be quietly improved after the fact.</p>
 
-<div class="stats" id="stats">
+<div class="stats" id="stats" aria-live="polite" aria-busy="true">
   <div class="loading">Loading the record…</div>
 </div>
 
 <h2>The record</h2>
 <p class="sub" id="record-sub">Every window that has opened so far, with the lead time between
 publication and the window it forecasts.</p>
-<div class="scroll">
+<div class="scroll" aria-live="polite" aria-busy="true" id="record-region">
   <table id="record">
     <thead>
       <tr>
-        <th>Window opens</th><th>Model</th><th>Horizon</th><th>Stratum</th>
-        <th>Published</th><th>Lead</th><th>State</th><th>Proof</th>
+        <th scope="col">Window opens</th><th scope="col">Model</th>
+        <th scope="col">Horizon</th><th scope="col">Stratum</th>
+        <th scope="col">Published</th><th scope="col">Lead</th>
+        <th scope="col">State</th><th scope="col">Proof</th>
       </tr>
     </thead>
     <tbody><tr><td colspan="8" class="loading">Loading…</td></tr></tbody>
@@ -149,6 +182,8 @@ CSEP consistency tests.</p>
   next model has to beat.</p>
 </div>
 
+</main>
+
 <footer>
   <p>Catalogue data from <a href="https://www.geonet.org.nz/">GeoNet</a>.
   Source, decisions and full methodology at
@@ -163,9 +198,11 @@ const MODELS = ["baseline", "adaptive"];
 const HORIZONS = ["daily", "weekly"];
 const STRATA = ["shallow", "deep"];
 const FREEZE_DAYS = 45;
+const TOTAL = MODELS.length * HORIZONS.length * STRATA.length;
 
 const fmtDate = iso => new Date(iso).toISOString().slice(0, 10);
 const fmtDateTime = iso => new Date(iso).toISOString().slice(0, 16).replace("T", " ") + "Z";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 function stateClass(state) {
   if (state === "SCORED") return "ok";
@@ -174,15 +211,22 @@ function stateClass(state) {
 }
 
 async function load() {
+  // Each request resolves to either a payload or a named failure. A rejected
+  // fetch used to be dropped silently, which let a total loading failure fall
+  // through to the empty-record message: the page would state that no window
+  // had opened yet at the exact moment it could not see the record at all.
   const jobs = [];
   for (const m of MODELS) for (const h of HORIZONS) for (const s of STRATA) {
+    const path = `${m}/${h}/${s}.json`;
     jobs.push(
-      fetch(`${m}/${h}/${s}.json`)
-        .then(r => r.ok ? r.json() : null)
-        .catch(() => null)
+      fetch(path)
+        .then(r => r.ok ? r.json().then(payload => ({ path, payload })) : { path, failed: `HTTP ${r.status}` })
+        .catch(() => ({ path, failed: "unreachable" }))
     );
   }
-  const payloads = (await Promise.all(jobs)).filter(Boolean);
+  const results = await Promise.all(jobs);
+  const failures = results.filter(r => r.failed);
+  const payloads = results.filter(r => r.payload).map(r => r.payload);
 
   const rows = [];
   let generated = null;
@@ -199,15 +243,41 @@ async function load() {
     a.stratum.localeCompare(b.stratum)
   );
 
-  renderStats(rows);
-  renderTable(rows);
+  renderStats(rows, failures);
+  renderTable(rows, failures);
+
   if (generated) {
     document.getElementById("generated").textContent =
       "Record last rebuilt " + fmtDateTime(generated) + ". This page updates itself daily.";
   }
+  for (const id of ["stats", "record-region"]) {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute("aria-busy", "false");
+  }
 }
 
-function renderStats(rows) {
+function failureNotice(failures) {
+  const complete = failures.length === TOTAL;
+  return `<span class="eyebrow">${complete ? "The record could not be loaded" : "This view is incomplete"}</span>
+    <p>${complete
+      ? `None of the ${TOTAL} scoreboard files could be read, so this page cannot say anything
+         about the record. That is a failure to load the page, not evidence that no forecasts
+         exist. The record itself lives in git and can be checked directly with the audit below.`
+      : `${failures.length} of ${TOTAL} scoreboard files could not be read, so the figures and
+         the table below are missing part of the record. Treat them as a lower bound, not as
+         the whole picture.`}</p>
+    <p class="paths">${failures.map(f => esc(f.path) + " &middot; " + esc(f.failed)).join("<br>")}</p>`;
+}
+
+function renderStats(rows, failures) {
+  const el = document.getElementById("stats");
+
+  if (failures.length === TOTAL) {
+    el.className = "alert";
+    el.innerHTML = failureNotice(failures);
+    return;
+  }
+
   const published = rows.filter(r => r.manifest);
   const scored = rows.filter(r => r.state === "SCORED");
   const gaps = rows.filter(r => r.state === "NEVER_PUBLISHED");
@@ -233,36 +303,57 @@ function renderStats(rows) {
     cards.push({ n: nextScore.toISOString().slice(0, 10), k: "first scores due" });
   }
 
-  document.getElementById("stats").innerHTML = cards.map(c =>
+  el.innerHTML = cards.map(c =>
     `<div class="stat${c.good ? " good" : ""}">
        <span class="n">${c.n}</span><span class="k">${c.k}</span>
      </div>`).join("");
+
+  if (failures.length) {
+    const alert = document.createElement("div");
+    alert.className = "alert";
+    alert.innerHTML = failureNotice(failures);
+    el.insertAdjacentElement("afterend", alert);
+  }
 }
 
-function renderTable(rows) {
+function renderTable(rows, failures) {
   const body = document.querySelector("#record tbody");
+
   if (!rows.length) {
-    body.innerHTML = `<tr><td colspan="8" class="loading">
-      No window has opened yet. Forecasts are already published for windows still in the future;
-      they appear here once the window they describe begins.</td></tr>`;
-    document.getElementById("record-sub").textContent =
-      "Nothing has opened yet. Published forecasts appear here as their windows begin.";
+    // Emptiness and failure read identically in a table, so they are never
+    // allowed to render the same sentence.
+    body.innerHTML = failures.length
+      ? `<tr><td colspan="8" class="failed">The record could not be loaded, so nothing can be
+         shown here. This is a loading failure, not an empty record.</td></tr>`
+      : `<tr><td colspan="8" class="failed">No window has opened yet. Forecasts are already
+         published for windows still in the future; they appear here once the window they
+         describe begins.</td></tr>`;
+    if (!failures.length) {
+      document.getElementById("record-sub").textContent =
+        "Nothing has opened yet. Published forecasts appear here as their windows begin.";
+    }
     return;
   }
+
   body.innerHTML = rows.map(r => {
     const m = r.manifest;
+    // Every row's link said only "run", so a screen reader reading the link list
+    // heard the same word once per forecast, forever.
+    const what = `${r.model} ${r.stratum} ${r.horizon} forecast for ${fmtDate(r.window_start_utc)}`;
     const proof = m && m.ci_anchor && m.ci_anchor.run_url
-      ? `<a class="mono" href="${m.ci_anchor.run_url}" title="GitHub recorded this run start time server side">run&nbsp;&#8599;</a>`
-      : '<span class="mono" style="color:var(--muted)">&mdash;</span>';
+      ? `<a class="mono" href="${esc(m.ci_anchor.run_url)}"
+            aria-label="GitHub Actions run that published the ${esc(what)}"
+            title="GitHub recorded this run start time server side">run&nbsp;&#8599;</a>`
+      : '<span class="mono" aria-hidden="true">&mdash;</span>';
     return `<tr>
       <td class="mono">${fmtDate(r.window_start_utc)}</td>
-      <td>${r.model}</td>
-      <td>${r.horizon}</td>
-      <td>${r.stratum}</td>
+      <td>${esc(r.model)}</td>
+      <td>${esc(r.horizon)}</td>
+      <td>${esc(r.stratum)}</td>
       <td class="mono">${m ? fmtDateTime(m.published_at_utc) : "&mdash;"}</td>
       <td class="mono ${m ? "lead" : ""}">${m && typeof m.lead_hours === "number" ? m.lead_hours.toFixed(1) + "h" : "&mdash;"}</td>
-      <td><span class="pill ${stateClass(r.state)}">${r.state_label || r.state}</span></td>
-      <td>${proof}</td>
+      <td><span class="pill ${stateClass(r.state)}">${esc(r.state_label || r.state)}</span></td>
+      <td class="proof">${proof}</td>
     </tr>`;
   }).join("");
 }
