@@ -1,6 +1,30 @@
 {
-  "generated_at_utc": "2026-08-06T10:57:14Z",
+  "generated_at_utc": "2026-08-07T01:31:14Z",
   "scoreboards": {
-    "baseline/daily/deep": []
+    "baseline/daily/deep": [
+      {
+        "horizon": "daily",
+        "manifest": {
+          "ci_anchor": {
+            "note": "server-side timestamped by GitHub Actions; the run start time is retrievable through the Actions API independently of this repository.",
+            "present": true,
+            "repository": "jjxobi/ex-ante",
+            "run_attempt": "1",
+            "run_id": "31095207488",
+            "run_url": "https://github.com/jjxobi/ex-ante/actions/runs/31095207488",
+            "workflow": "forecast"
+          },
+          "commit_sha": "7cffe3eb48a7534dac4cba35ad231c73b45e0f8c",
+          "sha256": "ea0f15bdd00a0a9b87b82a4fccbae2a0f637a4d5d42d55cabc6f08d782f7e8de"
+        },
+        "model": "baseline",
+        "reason": "window closes 2026-08-08; the T+45 date 2026-09-22 has not arrived yet (now is 2026-08-07)",
+        "state": "PUBLISHED_NOT_YET_SCOREABLE",
+        "state_label": "published, not yet scoreable",
+        "stratum": "deep",
+        "window_end_utc": "2026-08-08T00:00:00Z",
+        "window_start_utc": "2026-08-07T00:00:00Z"
+      }
+    ]
   }
 }
