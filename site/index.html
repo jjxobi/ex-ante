@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ex Ante: a publicly scored New Zealand earthquake forecast</title>
+<meta name="description" content="Probabilistic earthquake rate forecasts for New Zealand, committed to a public git history before the window they describe, then scored in the open.">
+<style>
+  :root {
+    --bg: #fbfbf9;
+    --fg: #16161a;
+    --muted: #5f6169;
+    --line: #e0e0dc;
+    --card: #ffffff;
+    --accent: #1f6f5c;
+    --warn: #8a5a12;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #131316; --fg: #ecebe8; --muted: #9a9aa2; --line: #2c2c31;
+      --card: #1a1a1e; --accent: #6fd0b2; --warn: #e0b463;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 20px 96px; }
+  header { padding: 72px 0 40px; border-bottom: 1px solid var(--line); }
+  h1 { font-size: 2.6rem; line-height: 1.1; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .lede { font-size: 1.15rem; color: var(--muted); margin: 0; max-width: 62ch; }
+  .defn { font-style: italic; color: var(--muted); font-size: .95rem; margin: 18px 0 0; }
+  h2 { font-size: 1.3rem; margin: 52px 0 6px; letter-spacing: -0.01em; }
+  h2 + .sub { color: var(--muted); margin: 0 0 20px; font-size: .95rem; max-width: 64ch; }
+  p { max-width: 68ch; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 32px 0 0; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+  .stat .n { font-size: 2rem; font-weight: 620; letter-spacing: -0.02em; display: block; line-height: 1.1; }
+  .stat .k { color: var(--muted); font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; margin-top: 6px; display: block; }
+  .stat.good .n { color: var(--accent); }
+
+  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; min-width: 720px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { font-size: .76rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
+  td.mono, .mono { font-family: var(--mono); font-size: .84rem; }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .75rem; border: 1px solid var(--line); color: var(--muted); }
+  .pill.ok { color: var(--accent); border-color: var(--accent); }
+  .pill.gap { color: var(--warn); border-color: var(--warn); }
+  .lead { color: var(--accent); font-weight: 600; }
+
+  pre { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+        padding: 16px; overflow-x: auto; font-family: var(--mono); font-size: .85rem; line-height: 1.55; }
+  code { font-family: var(--mono); font-size: .88em; }
+  a { color: inherit; text-decoration-color: var(--muted); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: currentColor; }
+
+  .note { border-left: 3px solid var(--warn); padding: 4px 0 4px 16px; margin: 22px 0; color: var(--muted); }
+  .note strong { color: var(--fg); }
+  footer { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; }
+  .loading { color: var(--muted); padding: 24px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Ex Ante</h1>
+  <p class="lede">Probabilistic earthquake rate forecasts for New Zealand, committed to a public
+  git history <strong>before</strong> the window they describe, then scored in the open against
+  what actually happened.</p>
+  <p class="defn">ex ante &middot; before the event. The opposite of how a backtest reasons.</p>
+</header>
+
+<h2>Why this exists</h2>
+<p class="sub">Every forecasting portfolio shows a backtest. Backtests are cheap and
+unfalsifiable: you fit a model to history, tune until the number looks good, and publish the
+number. Nobody can tell what you tried and discarded.</p>
+<p>This project cannot do that. A forecast is written to git, with a hash and a server side
+timestamp from GitHub, hours before the window it describes opens. The code physically refuses
+to publish a forecast for a window that has already started, so a missed window stays missed
+and shows up below as a permanent gap. There is no version of this record in which a bad
+forecast can be quietly improved after the fact.</p>
+
+<div class="stats" id="stats">
+  <div class="loading">Loading the record…</div>
+</div>
+
+<h2>The record</h2>
+<p class="sub" id="record-sub">Every window that has opened so far, with the lead time between
+publication and the window it forecasts.</p>
+<div class="scroll">
+  <table id="record">
+    <thead>
+      <tr>
+        <th>Window opens</th><th>Model</th><th>Horizon</th><th>Stratum</th>
+        <th>Published</th><th>Lead</th><th>State</th><th>Proof</th>
+      </tr>
+    </thead>
+    <tbody><tr><td colspan="8" class="loading">Loading…</td></tr></tbody>
+  </table>
+</div>
+
+<h2>Verify it yourself</h2>
+<p class="sub">This is the part that matters. Do not take the table above on trust: it is
+generated by the same project it describes.</p>
+<pre>git clone https://github.com/jjxobi/ex-ante
+cd ex-ante
+python scripts/audit_history.py --online</pre>
+<p>The audit reads git history rather than the current checkout, so a forecast that was altered
+and altered back cannot look honest. It imports nothing from the forecasting code, because an
+auditor built on the thing it audits inherits its bugs. It refuses to run against a shallow
+clone rather than reporting a clean result it did not earn. Every check is mutation tested:
+disabling any one of them breaks at least one test.</p>
+<p>With <code>--online</code> it also checks each forecast against the GitHub Actions run that
+produced it. That start time is recorded server side and is the one timestamp neither the author
+nor this repository can set.</p>
+
+<h2>What it forecasts</h2>
+<p class="sub">Rates, not alarms. No prediction of individual earthquakes.</p>
+<p>Expected count of magnitude 3.0 and above events per cell per window, over a frozen grid of
+4,100 cells at 0.1&deg; resolution, split into two depth strata at 41 km and scored separately.
+The grid, the magnitude threshold and the depth boundary were fixed before publication began and
+are hash locked, so they cannot be quietly retuned to flatter a result. Scoring uses the standard
+CSEP consistency tests.</p>
+
+<div class="note" id="deficiency">
+  <strong>A known deficiency, published deliberately.</strong>
+  The baseline model over predicts the event rate by 32.7% against its own fitting window. This
+  was measured before going live and recorded rather than repaired, because a forecast that
+  claims to have no known weaknesses is the least believable kind. It is also the target the
+  next model has to beat.
+</div>
+
+<footer>
+  <p>Catalogue data from <a href="https://www.geonet.org.nz/">GeoNet</a>.
+  Source, decisions and full methodology at
+  <a href="https://github.com/jjxobi/ex-ante">github.com/jjxobi/ex-ante</a>.</p>
+  <p id="generated"></p>
+</footer>
+
+</div>
+
+<script>
+const MODELS = ["baseline", "adaptive"];
+const HORIZONS = ["daily", "weekly"];
+const STRATA = ["shallow", "deep"];
+const FREEZE_DAYS = 45;
+
+const fmtDate = iso => new Date(iso).toISOString().slice(0, 10);
+const fmtDateTime = iso => new Date(iso).toISOString().slice(0, 16).replace("T", " ") + "Z";
+
+function stateClass(state) {
+  if (state === "SCORED") return "ok";
+  if (state === "NEVER_PUBLISHED" || state === "SCORING_FAILED") return "gap";
+  return "";
+}
+
+async function load() {
+  const jobs = [];
+  for (const m of MODELS) for (const h of HORIZONS) for (const s of STRATA) {
+    jobs.push(
+      fetch(`${m}/${h}/${s}.json`)
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null)
+    );
+  }
+  const payloads = (await Promise.all(jobs)).filter(Boolean);
+
+  const rows = [];
+  let generated = null;
+  for (const payload of payloads) {
+    if (payload.generated_at_utc) generated = payload.generated_at_utc;
+    for (const entries of Object.values(payload.scoreboards || {})) {
+      for (const e of entries) rows.push(e);
+    }
+  }
+  rows.sort((a, b) =>
+    b.window_start_utc.localeCompare(a.window_start_utc) ||
+    a.model.localeCompare(b.model) ||
+    a.horizon.localeCompare(b.horizon) ||
+    a.stratum.localeCompare(b.stratum)
+  );
+
+  renderStats(rows);
+  renderTable(rows);
+  if (generated) {
+    document.getElementById("generated").textContent =
+      "Record last rebuilt " + fmtDateTime(generated) + ". This page updates itself daily.";
+  }
+}
+
+function renderStats(rows) {
+  const published = rows.filter(r => r.manifest);
+  const scored = rows.filter(r => r.state === "SCORED");
+  const gaps = rows.filter(r => r.state === "NEVER_PUBLISHED");
+  const leads = published.map(r => r.manifest.lead_hours).filter(v => typeof v === "number");
+  const minLead = leads.length ? Math.min(...leads) : null;
+
+  // The soonest window still waiting on its T+45 freeze.
+  let nextScore = null;
+  for (const r of rows) {
+    if (r.state !== "PUBLISHED_NOT_YET_SCOREABLE") continue;
+    const due = new Date(new Date(r.window_end_utc).getTime() + FREEZE_DAYS * 86400000);
+    if (!nextScore || due < nextScore) nextScore = due;
+  }
+
+  const cards = [
+    { n: published.length, k: "forecasts on the record", good: true },
+    { n: minLead === null ? "&mdash;" : minLead.toFixed(0) + "h",
+      k: "smallest lead, none negative", good: true },
+    { n: scored.length, k: "scored so far" },
+    { n: gaps.length, k: gaps.length === 1 ? "permanent gap" : "permanent gaps" },
+  ];
+  if (nextScore) {
+    cards.push({ n: nextScore.toISOString().slice(0, 10), k: "first scores due" });
+  }
+
+  document.getElementById("stats").innerHTML = cards.map(c =>
+    `<div class="stat${c.good ? " good" : ""}">
+       <span class="n">${c.n}</span><span class="k">${c.k}</span>
+     </div>`).join("");
+}
+
+function renderTable(rows) {
+  const body = document.querySelector("#record tbody");
+  if (!rows.length) {
+    body.innerHTML = `<tr><td colspan="8" class="loading">
+      No window has opened yet. Forecasts are already published for windows still in the future;
+      they appear here once the window they describe begins.</td></tr>`;
+    document.getElementById("record-sub").textContent =
+      "Nothing has opened yet. Published forecasts appear here as their windows begin.";
+    return;
+  }
+  body.innerHTML = rows.map(r => {
+    const m = r.manifest;
+    const proof = m && m.ci_anchor && m.ci_anchor.run_url
+      ? `<a class="mono" href="${m.ci_anchor.run_url}" title="GitHub recorded this run start time server side">run&nbsp;&#8599;</a>`
+      : '<span class="mono" style="color:var(--muted)">&mdash;</span>';
+    return `<tr>
+      <td class="mono">${fmtDate(r.window_start_utc)}</td>
+      <td>${r.model}</td>
+      <td>${r.horizon}</td>
+      <td>${r.stratum}</td>
+      <td class="mono">${m ? fmtDateTime(m.published_at_utc) : "&mdash;"}</td>
+      <td class="mono ${m ? "lead" : ""}">${m && typeof m.lead_hours === "number" ? m.lead_hours.toFixed(1) + "h" : "&mdash;"}</td>
+      <td><span class="pill ${stateClass(r.state)}">${r.state_label || r.state}</span></td>
+      <td>${proof}</td>
+    </tr>`;
+  }).join("");
+}
+
+load();
+</script>
+</body>
+</html>

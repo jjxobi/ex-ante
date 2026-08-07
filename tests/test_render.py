@@ -58,8 +58,14 @@ def _score_result(n_events_used: int, **overrides) -> score.ScoreResult:
     )
 
 
+# published_at_utc is not optional decoration: eq.anchor writes it on every
+# manifest it produces, and the scoreboard derives the publication lead from it,
+# which is the project's central claim. A fixture without it was not a smaller
+# manifest, it was one that could never exist, and it hid the fact that render
+# now depends on the field.
 SAMPLE_MANIFEST = {
     "sha256": "a" * 64,
+    "published_at_utc": "2026-01-01T00:00:00Z",
     "anchors": {
         "commit": {"sha": "deadbeef", "note": "n/a"},
         "ci_run": {"present": False, "run_id": None, "note": "no GITHUB_RUN_ID"},
@@ -386,3 +392,48 @@ def test_build_scoreboard_distinguishes_scored_gap_and_not_yet_scoreable(
     # Never backfilled: the gap has no forecast file on disk at all.
     gap_dir = forecasts_dir / "baseline" / "weekly" / "shallow"
     assert not (gap_dir / f"{w2_start.date().isoformat()}.json").exists()
+
+
+def test_the_scoreboard_carries_the_publication_lead():
+    """The lead between publishing and the window opening is the project's
+    central claim, so the scoreboard states it rather than leaving every
+    consumer to reconstruct it and risk disagreeing with the manifest it is
+    displaying.
+    """
+    # WINDOW_START is 2026-07-20 00:00Z, so publishing at 11:00Z the day before
+    # is a lead of exactly 13 hours.
+    manifest = dict(SAMPLE_MANIFEST, published_at_utc="2026-07-19T11:00:00Z")
+    evaluation = freeze.FrozenEvaluation(
+        window_start=WINDOW_START,
+        window_end=WINDOW_END,
+        state=freeze.WindowState.PUBLISHED_NOT_YET_SCOREABLE,
+        target_snapshot_date=freeze.target_snapshot_date(WINDOW_END),
+        reason="the T+45 date has not arrived yet",
+    )
+    rendered = render.render_window(
+        evaluation, model="baseline", horizon="daily", stratum="shallow", manifest=manifest
+    )
+
+    assert rendered["manifest"]["lead_hours"] == 13.0
+    assert rendered["manifest"]["published_at_utc"] == "2026-07-19T11:00:00Z"
+
+
+def test_a_negative_lead_would_be_visible_rather_than_hidden():
+    """Rule 1 makes this state unreachable through eq.publish, which refuses
+    once a window has started. If it ever appears in the record anyway, the
+    scoreboard must show it as the negative number it is rather than clamping
+    it to zero and rendering a violation as though it were fine.
+    """
+    manifest = dict(SAMPLE_MANIFEST, published_at_utc="2026-07-20T06:00:00Z")
+    evaluation = freeze.FrozenEvaluation(
+        window_start=WINDOW_START,
+        window_end=WINDOW_END,
+        state=freeze.WindowState.PUBLISHED_NOT_YET_SCOREABLE,
+        target_snapshot_date=freeze.target_snapshot_date(WINDOW_END),
+        reason="the T+45 date has not arrived yet",
+    )
+    rendered = render.render_window(
+        evaluation, model="baseline", horizon="daily", stratum="shallow", manifest=manifest
+    )
+
+    assert rendered["manifest"]["lead_hours"] == -6.0

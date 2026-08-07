@@ -185,10 +185,22 @@ def render_window(
         return base
 
     if manifest is not None:
+        # published_at and the lead it implies are carried here because they are
+        # the project's central claim, and a payload that omits them forces any
+        # reader of the record to go and reconstruct the one number that makes
+        # the rest of it mean anything. Derived once, here, rather than by every
+        # consumer: a page that computed its own lead time could disagree with
+        # the manifest it is displaying.
+        published_at = manifest["published_at_utc"]
+        lead = _as_utc_datetime(evaluation.window_start) - _as_utc_datetime(
+            datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+        )
         base["manifest"] = {
             "sha256": manifest["sha256"],
             "commit_sha": manifest["anchors"]["commit"]["sha"],
             "ci_anchor": manifest["anchors"]["ci_run"],
+            "published_at_utc": published_at,
+            "lead_hours": round(lead.total_seconds() / 3600, 1),
         }
 
     if evaluation.state is freeze.WindowState.PUBLISHED_NOT_YET_SCOREABLE:
