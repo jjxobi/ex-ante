@@ -92,6 +92,41 @@
   .swatch { width: 22px; height: 3px; background: var(--lead); }
   .swatch.win { height: 12px; width: 20px; border: 1px solid var(--window); background: none; }
 
+  /* Where it stands. Two questions side by side, divided by a rule rather
+     than boxed into cards, because the split between them is the point: one is
+     answerable today and one is not answerable until September. */
+  .standing { display: grid; grid-template-columns: 1fr 1fr; gap: 0 40px;
+              margin: 44px 0 0; border-top: 2px solid var(--ink); }
+  .standing > div { padding: 22px 0 4px; }
+  .standing > div + div { border-left: 1px solid var(--rule); padding-left: 40px; }
+  .standing h3 { font-size: 1rem; font-weight: 700; margin: 0 0 12px;
+                 letter-spacing: -0.01em; }
+  .verdict { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em;
+             line-height: 1.15; margin: 0 0 14px; }
+  .verdict.yes { color: var(--lead); }
+  .verdict.pending { color: var(--muted); }
+  .standing ul { list-style: none; margin: 0; padding: 0; font-family: var(--mono);
+                 font-size: .78rem; color: var(--muted); }
+  .standing li { display: flex; justify-content: space-between; gap: 16px;
+                 padding: 5px 0; border-bottom: 1px solid var(--rule); }
+  .standing li b { color: var(--ink); font-weight: 600;
+                   font-variant-numeric: tabular-nums; }
+  .standing li b.good { color: var(--lead); }
+  .standing li b.bad { color: var(--fault); }
+  @media (max-width: 700px) {
+    .standing { grid-template-columns: 1fr; }
+    .standing > div + div { border-left: 0; padding-left: 0; border-top: 1px solid var(--rule); }
+  }
+
+  /* How it works: a real sequence, so the steps are numbered. */
+  .steps { list-style: none; counter-reset: step; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; display: grid; grid-template-columns: 34px 1fr;
+              gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--rule); }
+  .steps li::before { content: counter(step); font-family: var(--mono);
+                      font-size: .8rem; color: var(--muted); padding-top: 3px; }
+  .steps b { display: block; font-weight: 650; margin-bottom: 2px; }
+  .steps span { color: var(--muted); }
+
   /* Figures as a ruled reading line, not a row of metric cards. */
   .figures { display: flex; flex-wrap: wrap; gap: 6px 32px; margin: 28px 0 0;
              padding-top: 18px; border-top: 1px solid var(--rule);
@@ -148,13 +183,38 @@
 <div class="wrap">
 
 <header>
-  <h1>Forecasts, filed before the fact.</h1>
-  <p class="lede">Probabilistic earthquake rate forecasts for New Zealand, committed to a public
-  git history before the window they describe, then scored in the open against what happened.</p>
+  <h1>An earthquake forecast that grades itself in public.</h1>
+  <p class="lede">Every day this predicts how many magnitude 3.0+ earthquakes New Zealand will
+  see, and where. Each prediction is locked into a public record hours before the day it covers,
+  so it cannot be quietly changed afterwards. Then reality decides.</p>
   <p class="defn">ex ante / before the event. The opposite of how a backtest reasons.</p>
 </header>
 
 <main>
+
+<section aria-labelledby="standing-heading">
+  <h2 id="standing-heading">Where it stands</h2>
+  <p class="sub">Two different questions, and only one of them can be answered yet.</p>
+  <div class="standing" id="standing" aria-live="polite" aria-busy="true">
+    <p class="loading">Reading the record...</p>
+  </div>
+</section>
+
+<section aria-labelledby="how-heading">
+  <h2 id="how-heading">How it works</h2>
+  <p class="sub">Three steps, and the order is the whole safeguard.</p>
+  <ol class="steps">
+    <li><span><b>Predict, and lock it in.</b> A forecast for tomorrow is written to a public git
+      repository the evening before, with a content hash and a timestamp recorded on GitHub's
+      servers rather than this project's.</span></li>
+    <li><span><b>Wait, without touching it.</b> Once the day begins, the code refuses to write a
+      forecast for it. A day that was missed stays missed and is shown below as a permanent gap
+      rather than filled in later.</span></li>
+    <li><span><b>Score it against what happened.</b> Forty-five days after the day closes, so
+      late corrections to the earthquake catalogue have settled, the prediction is compared to
+      reality using standard CSEP statistical tests. Pass or fail, the result is published.</span></li>
+  </ol>
+</section>
 
 <section aria-labelledby="record-heading">
   <h2 id="record-heading">Every forecast, and the gap it was filed into</h2>
@@ -251,6 +311,7 @@ const fmtDate = iso => new Date(iso).toISOString().slice(0, 10);
 const fmtDateTime = iso => new Date(iso).toISOString().slice(0, 16).replace("T", " ") + "Z";
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const ms = iso => new Date(iso).getTime();
+const signedHours = v => (v >= 0 ? "+" : "") + v.toFixed(1) + "h";
 
 function stateClass(state) {
   if (state === "SCORED") return "scored";
@@ -290,6 +351,7 @@ async function load() {
     a.stratum.localeCompare(b.stratum)
   );
 
+  renderStanding(rows, failures);
   renderChart(rows, failures);
   renderTable(rows, failures);
 
@@ -297,7 +359,7 @@ async function load() {
     document.getElementById("generated").textContent =
       "Record rebuilt " + fmtDateTime(generated) + ". This page reads it fresh on every visit.";
   }
-  for (const id of ["chart", "record-region"]) {
+  for (const id of ["standing", "chart", "record-region"]) {
     const el = document.getElementById(id);
     if (el) el.setAttribute("aria-busy", "false");
   }
@@ -313,6 +375,75 @@ function failureMarkup(failures) {
       : `${failures.length} of ${TOTAL} scoreboard files could not be read, so what follows is
          missing part of the record. Treat it as a lower bound, not the whole picture.`}</p>
     <p class="paths">${failures.map(f => esc(f.path) + "  " + esc(f.failed)).join("<br>")}</p>`;
+}
+
+function renderStanding(rows, failures) {
+  const el = document.getElementById("standing");
+  if (failures.length === TOTAL) {
+    el.className = "alert";
+    el.innerHTML = failureMarkup(failures);
+    return;
+  }
+
+  const published = rows.filter(r => r.manifest);
+  const leads = published.map(r => r.manifest.lead_hours).filter(v => typeof v === "number");
+  const late = leads.filter(v => v < 0).length;
+  const gaps = rows.filter(r => r.state === "NEVER_PUBLISHED").length;
+  const scored = rows.filter(r => r.state === "SCORED");
+
+  // Two questions the project keeps deliberately apart. Whether the record can
+  // be trusted is checkable today. Whether the forecasts are any good cannot be
+  // known until the first window clears its 45 day freeze, and saying so is
+  // more honest than filling the space with something that looks like a result.
+  let due = null;
+  for (const r of rows) {
+    if (r.state !== "PUBLISHED_NOT_YET_SCOREABLE") continue;
+    const d = new Date(ms(r.window_end_utc) + FREEZE_DAYS * 86400000);
+    if (!due || d < due) due = d;
+  }
+  const days = due ? Math.max(0, Math.ceil((due - Date.now()) / 86400000)) : null;
+
+  // A clean verdict is only clean if it was reached on the whole record. With
+  // part of it unread the answer is qualified, never a confident yes with the
+  // caveat parked somewhere further down the page.
+  const honest = late === 0 && gaps === 0 && published.length > 0;
+  const partial = failures.length > 0;
+  const integrity = published.length === 0
+    ? `<p class="verdict pending">Nothing published yet</p>`
+    : !honest
+      ? `<p class="verdict" style="color:var(--fault)">No. See the record below</p>`
+      : partial
+        ? `<p class="verdict pending">Clean so far, but ${failures.length} of ${TOTAL}
+           files could not be read, so this is not a verdict on the whole record</p>`
+        : `<p class="verdict yes">Yes, and you can check it yourself</p>`;
+
+  const skill = scored.length
+    ? `<p class="verdict">${scored.length} of ${rows.length} windows scored</p>`
+    : `<p class="verdict pending">Not known yet</p>`;
+
+  el.className = "standing";
+  el.innerHTML = `
+    <div>
+      <h3>Is the record honest?</h3>
+      ${integrity}
+      <ul>
+        <li><span>forecasts published</span> <b>${published.length}</b></li>
+        <li><span>filed after their window opened</span> <b class="${late ? "bad" : "good"}">${late}</b></li>
+        <li><span>windows missed entirely</span> <b class="${gaps ? "bad" : "good"}">${gaps}</b></li>
+        <li><span>smallest head start</span> <b class="${late ? "bad" : "good"}">${leads.length ? signedHours(Math.min(...leads)) : "n/a"}</b></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Are the forecasts any good?</h3>
+      ${skill}
+      <ul>
+        <li><span>windows scored so far</span> <b>${scored.length}</b></li>
+        <li><span>first verdict due</span> <b>${due ? due.toISOString().slice(0, 10) : "n/a"}</b></li>
+        <li><span>days until then</span> <b>${days === null ? "n/a" : days}</b></li>
+        <li><span>why the wait</span> <b>45 day freeze</b></li>
+      </ul>
+    </div>
+    ${failures.length ? `<div class="alert" style="grid-column:1/-1">${failureMarkup(failures)}</div>` : ""}`;
 }
 
 function renderChart(rows, failures) {
@@ -355,7 +486,7 @@ function renderChart(rows, failures) {
         <span class="track-window" style="left:${pct(start)}%;width:${pct(end) - pct(start)}%"></span>
         <span class="track-pub" style="left:${pct(pub)}%"></span>
       </div>
-      <div class="track-lead-value">+${lead.toFixed(1)}h</div>
+      <div class="track-lead-value">${signedHours(lead)}</div>
     </li>`;
   }).join("");
 
@@ -380,7 +511,7 @@ function renderChart(rows, failures) {
     </div>
     <dl class="figures">
       <div><dt>forecasts</dt><dd>${published.length}</dd></div>
-      <div><dt>smallest lead</dt><dd class="accent">${leads.length ? "+" + Math.min(...leads).toFixed(1) + "h" : "n/a"}</dd></div>
+      <div><dt>smallest lead</dt><dd class="accent">${leads.length ? signedHours(Math.min(...leads)) : "n/a"}</dd></div>
       <div><dt>negative leads</dt><dd class="accent">${leads.filter(v => v < 0).length}</dd></div>
       <div><dt>scored</dt><dd>${scored}</dd></div>
       <div><dt>gaps</dt><dd>${gaps}</dd></div>
@@ -422,7 +553,7 @@ function renderTable(rows, failures) {
       <td>${esc(r.horizon)}</td>
       <td>${esc(r.stratum)}</td>
       <td class="num">${m ? fmtDateTime(m.published_at_utc) : "&mdash;"}</td>
-      <td class="${m ? "lead-cell" : "num"}">${m && typeof m.lead_hours === "number" ? "+" + m.lead_hours.toFixed(1) + "h" : "&mdash;"}</td>
+      <td class="${m ? "lead-cell" : "num"}">${m && typeof m.lead_hours === "number" ? signedHours(m.lead_hours) : "&mdash;"}</td>
       <td><span class="state ${stateClass(r.state)}">${esc(r.state_label || r.state)}</span></td>
       <td class="proof">${proof}</td>
     </tr>`;
