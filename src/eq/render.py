@@ -215,6 +215,24 @@ def render_window(
     # docstring: no other branch above reaches this far.
     result = evaluation.score
     base["n_events"] = evaluation.n_events
+
+    # Predicted against actual, the one accuracy statement a reader with no
+    # statistics can read unaided. The four tests below are more informative and
+    # less legible; without these two numbers a scoreboard can only offer
+    # quantiles, which say nothing to most people looking at it.
+    #
+    # Routed through n_test_comparison rather than reading the two fields, so
+    # the mask check runs. Emitting an expected count taken over the region
+    # beside an observed count taken over everything is exactly the error that
+    # reversed the sign of the D14 over-prediction finding once already.
+    comparison = result.n_test_comparison()
+    base["counts"] = {
+        "predicted": comparison.expected,
+        "actual": comparison.observed,
+        "difference": comparison.difference,
+        "mask_id": comparison.mask_id,
+    }
+
     base["tests"] = {
         "N": render_test(result.n_test),
         "S": render_test(result.s_test),

@@ -86,11 +86,14 @@
     .drawing .track-pub, .drawing .track-lead-value { opacity: 0; }
     .track-pub, .track-lead-value { transition: opacity 500ms ease 250ms; }
   }
-  .legend { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 18px;
-            font-family: var(--mono); font-size: .74rem; color: var(--muted); }
-  .legend span { display: inline-flex; align-items: center; gap: 8px; }
-  .swatch { width: 22px; height: 3px; background: var(--lead); }
-  .swatch.win { height: 12px; width: 20px; border: 1px solid var(--window); background: none; }
+  .key { list-style: none; margin: 0 0 26px; padding: 0; max-width: 66ch; }
+  .key li { display: grid; grid-template-columns: 30px 1fr; gap: 12px; align-items: baseline;
+            padding: 5px 0; color: var(--muted); font-size: .92rem; }
+  .key i { display: block; margin-top: 8px; }
+  .k-pub { width: 2px; height: 13px; background: var(--lead); margin-left: 14px; }
+  .k-lead { height: 3px; background: var(--lead); }
+  .k-win { height: 13px; border: 1px solid var(--window);
+           background: color-mix(in srgb, var(--window) 15%, transparent); }
 
   /* Where it stands. Two questions side by side, divided by a rule rather
      than boxed into cards, because the split between them is the point: one is
@@ -167,6 +170,11 @@
   .empty { color: var(--muted); padding: 22px 0; max-width: 66ch; white-space: normal; }
   .loading { color: var(--muted); padding: 22px 0; font-family: var(--mono); font-size: .8rem; }
 
+  details { margin: 8px 0 0; border-top: 1px solid var(--rule); padding-top: 14px; }
+  summary { cursor: pointer; font-family: var(--mono); font-size: .78rem; color: var(--muted); }
+  summary:hover { color: var(--ink); }
+  details p { margin: 12px 0 0; font-size: .92rem; color: var(--muted); }
+
   footer { margin-top: 96px; padding-top: 22px; border-top: 1px solid var(--rule);
            color: var(--muted); font-size: .84rem; }
 
@@ -184,17 +192,18 @@
 
 <header>
   <h1>An earthquake forecast that grades itself in public.</h1>
-  <p class="lede">Every day this predicts how many magnitude 3.0+ earthquakes New Zealand will
-  see, and where. Each prediction is locked into a public record hours before the day it covers,
-  so it cannot be quietly changed afterwards. Then reality decides.</p>
-  <p class="defn">ex ante / before the event. The opposite of how a backtest reasons.</p>
+  <p class="lede">Every evening, this works out how many earthquakes New Zealand should expect
+  the next day, and roughly where. The prediction is written down publicly before that day
+  starts, so it cannot be changed later. Then we wait and see what actually happened.</p>
+  <p class="defn">It is easy to look clever about the past. This is an attempt to be
+  measured on the future instead.</p>
 </header>
 
 <main>
 
 <section aria-labelledby="standing-heading">
   <h2 id="standing-heading">Where it stands</h2>
-  <p class="sub">Two different questions, and only one of them can be answered yet.</p>
+  <p class="sub">Two very different questions. Only one of them has an answer yet, and pretending otherwise would defeat the point.</p>
   <div class="standing" id="standing" aria-live="polite" aria-busy="true">
     <p class="loading">Reading the record...</p>
   </div>
@@ -202,25 +211,33 @@
 
 <section aria-labelledby="how-heading">
   <h2 id="how-heading">How it works</h2>
-  <p class="sub">Three steps, and the order is the whole safeguard.</p>
+  <p class="sub">Three steps. The order is the entire safeguard, and it is the only thing you
+  really need to understand about this project.</p>
   <ol class="steps">
-    <li><span><b>Predict, and lock it in.</b> A forecast for tomorrow is written to a public git
-      repository the evening before, with a content hash and a timestamp recorded on GitHub's
-      servers rather than this project's.</span></li>
-    <li><span><b>Wait, without touching it.</b> Once the day begins, the code refuses to write a
-      forecast for it. A day that was missed stays missed and is shown below as a permanent gap
-      rather than filled in later.</span></li>
-    <li><span><b>Score it against what happened.</b> Forty-five days after the day closes, so
-      late corrections to the earthquake catalogue have settled, the prediction is compared to
-      reality using standard CSEP statistical tests. Pass or fail, the result is published.</span></li>
+    <li><span><b>Predict tomorrow, tonight.</b> The prediction is published to a public website
+      the evening before the day it covers. An outside company, GitHub, records the time it
+      arrived, so the timestamp is not something this project can fiddle with.</span></li>
+    <li><span><b>Once the day starts, it is sealed.</b> The software will not let a prediction be
+      written or edited for a day that has already begun. If a day gets skipped, it stays
+      skipped and is shown as a blank in the record, rather than being quietly filled in
+      afterwards.</span></li>
+    <li><span><b>Six weeks later, mark it.</b> Earthquake records get revised for weeks after the
+      event as scientists refine their measurements, so the scoring waits 45 days for the numbers
+      to settle. Then the prediction is compared with what really happened, using the standard
+      tests earthquake forecasters use on each other. Good result or bad, it gets
+      published.</span></li>
   </ol>
 </section>
 
 <section aria-labelledby="record-heading">
-  <h2 id="record-heading">Every forecast, and the gap it was filed into</h2>
-  <p class="sub">Each track runs from the moment a forecast was committed to the window it
-  describes. The gap is the argument: it cannot be manufactured afterwards, and the code raises
-  an error rather than writing a forecast once its window has opened.</p>
+  <h2 id="record-heading">Every prediction, and how far ahead it was made</h2>
+  <p class="sub">One row per prediction. Reading left to right is reading forwards in time.</p>
+  <ul class="key">
+    <li><i class="k-pub"></i> the moment the prediction was written down and sealed</li>
+    <li><i class="k-lead"></i> the head start: time between writing it down and the period
+      starting. This is the part that cannot be faked</li>
+    <li><i class="k-win"></i> the period being predicted, a day or a week</li>
+  </ul>
   <div class="chart" id="chart" aria-live="polite" aria-busy="true">
     <p class="loading">Reading the record...</p>
   </div>
@@ -238,17 +255,18 @@
 </section>
 
 <section aria-labelledby="table-heading">
-  <h2 id="table-heading">The record in full</h2>
-  <p class="sub">Every window that has opened so far. Windows still in the future are already
-  forecast, and appear here as they begin.</p>
+  <h2 id="table-heading">The same thing, as a list</h2>
+  <p class="sub">Every period that has begun so far. Periods still in the future have already
+  been predicted, and appear here once they start. Each receipt links to GitHub's own record of
+  when the prediction arrived.</p>
   <div class="scroll" id="record-region" aria-live="polite" aria-busy="true">
     <table id="record">
       <thead>
         <tr>
-          <th scope="col">Window</th><th scope="col">Model</th>
-          <th scope="col">Horizon</th><th scope="col">Stratum</th>
-          <th scope="col">Committed</th><th scope="col">Lead</th>
-          <th scope="col">State</th><th scope="col">Proof</th>
+          <th scope="col">Period predicted</th><th scope="col">Method</th>
+          <th scope="col">Covers</th><th scope="col">Which quakes</th>
+          <th scope="col">Written down</th><th scope="col">Head start</th>
+          <th scope="col">Result</th><th scope="col">Receipt</th>
         </tr>
       </thead>
       <tbody><tr><td colspan="8" class="loading">Reading the record...</td></tr></tbody>
@@ -257,37 +275,59 @@
 </section>
 
 <section aria-labelledby="verify-heading">
-  <h2 id="verify-heading">Do not trust this page</h2>
-  <p class="sub">It is generated by the project it describes. Check it yourself instead.</p>
+  <h2 id="verify-heading">Do not take this page's word for it</h2>
+  <p class="sub">This page is produced by the very project it reports on, which is exactly the
+  situation where you should want an independent check. So there is one, and anyone can run
+  it.</p>
   <pre>git clone https://github.com/jjxobi/ex-ante
 cd ex-ante
 python scripts/audit_history.py --online</pre>
-  <p>The audit reads git history rather than the current checkout, so a forecast altered and
-  altered back cannot look honest. It imports nothing from the forecasting code, because an
-  auditor built on what it audits inherits its bugs. It refuses to run against a shallow clone
-  rather than report a clean result it did not earn. Every check is mutation tested: disabling
-  any one of them breaks at least one test.</p>
-  <p>With <code>--online</code> each forecast is checked against the GitHub Actions run that
-  produced it. That start time is recorded server side, and is the one timestamp neither the
-  author nor this repository can set.</p>
+  <p>Those three lines download the whole history of the project and check it. Not the current
+  state of the files, the entire history, so a prediction that was edited and then edited back
+  still gets caught. It also asks GitHub directly when each prediction arrived, rather than
+  believing the timestamps this project wrote about itself.</p>
+  <p>It is deliberately built the way a stranger would build it, sharing no code with the
+  forecasting side, because a checker made from the same parts would inherit the same mistakes.
+  If it cannot do a proper check, it refuses to run rather than report a clean result it has not
+  earned.</p>
+  <details>
+    <summary>the technical version</summary>
+    <p>Reads git history rather than the working tree, verifies manifest checksums at every
+    commit that touched a forecast, confirms no forecast file was modified after its window
+    opened, checks a single grid hash across the record, and refuses to run against a shallow
+    clone. Every check is mutation tested: disabling any one breaks at least one test.</p>
+  </details>
 </section>
 
 <section aria-labelledby="what-heading">
-  <h2 id="what-heading">What is actually being forecast</h2>
-  <p class="sub">Rates, not alarms. No prediction of individual earthquakes.</p>
-  <p>Expected count of magnitude 3.0 and above events per cell per window, across a frozen grid
-  of 4,100 cells at 0.1 degree resolution, split into two depth strata at 41 km and scored
-  separately. The grid, the magnitude threshold and the depth boundary were fixed before
-  publication began and are locked by hash, so they cannot be quietly retuned to flatter a
-  result. Scoring uses the standard CSEP consistency tests.</p>
+  <h2 id="what-heading">What is being predicted, and what is not</h2>
+  <p class="sub">This does not predict individual earthquakes. Nobody can do that.</p>
+  <p>What it predicts is <b>how many</b>. New Zealand is divided into a grid of small squares,
+  and for each square the forecast gives the number of earthquakes to expect over the coming day
+  or week. Think of it like rain: not a claim that it will rain at 3pm on your street, but an
+  expected amount over an area. Only quakes of magnitude 3 and above are counted, roughly the
+  point where people start to feel them.</p>
+  <p>Quakes are also split into shallow and deep, above and below 41 km down, and predicted
+  separately. They behave differently enough that mixing them would hide errors in both.</p>
+  <p>The grid, the size cut-off and the depth split were all fixed in advance and cannot be
+  changed now. That matters: if you can move the target after seeing the result, you can make
+  almost any forecast look good.</p>
+  <details>
+    <summary>the technical version</summary>
+    <p>Expected count of M3.0+ events per cell per window over a frozen 4,100 cell grid at 0.1
+    degree resolution, two depth strata split at 41 km, fitted separately. Grid, threshold and
+    boundary are hash locked. Scoring uses the CSEP N, S, M and L consistency tests, with
+    information gain as the skill score against the baseline.</p>
+  </details>
 </section>
 
 <section aria-labelledby="flaw-heading">
-  <h2 id="flaw-heading">The baseline is wrong by 32.7 percent, on purpose</h2>
-  <p>It over predicts the event rate against its own fitting window. That was measured before
-  going live and recorded rather than repaired, because a forecast claiming no known weaknesses
-  is the least believable kind. It is also the number the next model has to beat, and leaving it
-  in place is what makes that comparison mean anything.</p>
+  <h2 id="flaw-heading">A flaw published on purpose</h2>
+  <p>The current method predicts about a third more earthquakes than actually occur. That was
+  measured before any of this went live, and left in place rather than quietly fixed.</p>
+  <p>Two reasons. A forecast claiming no known weaknesses is the least believable kind. And this
+  number is the bar a better method has to clear: patch the flaw now and there is nothing honest
+  left to compare the next attempt against.</p>
 </section>
 
 </main>
@@ -312,6 +352,19 @@ const fmtDateTime = iso => new Date(iso).toISOString().slice(0, 16).replace("T",
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const ms = iso => new Date(iso).getTime();
 const signedHours = v => (v >= 0 ? "+" : "") + v.toFixed(1) + "h";
+
+// The pipeline's vocabulary is not the reader's. Everything the machine calls a
+// horizon, a stratum or a state gets said in words a first-time visitor already
+// owns, in one place, so no other part of the page has to remember to translate.
+const HORIZON_WORDS = { daily: "one day", weekly: "one week" };
+const STRATUM_WORDS = { shallow: "shallow quakes", deep: "deep quakes" };
+const STATE_WORDS = {
+  PUBLISHED_NOT_YET_SCOREABLE: "waiting for its result",
+  SCORED: "scored",
+  NEVER_PUBLISHED: "skipped, no prediction exists",
+  SCORING_FAILED: "scoring failed",
+};
+const words = (map, key) => map[key] || key;
 
 function stateClass(state) {
   if (state === "SCORED") return "scored";
@@ -411,36 +464,36 @@ function renderStanding(rows, failures) {
   const integrity = published.length === 0
     ? `<p class="verdict pending">Nothing published yet</p>`
     : !honest
-      ? `<p class="verdict" style="color:var(--fault)">No. See the record below</p>`
+      ? `<p class="verdict" style="color:var(--fault)">No. Something below does not add up</p>`
       : partial
         ? `<p class="verdict pending">Clean so far, but ${failures.length} of ${TOTAL}
            files could not be read, so this is not a verdict on the whole record</p>`
-        : `<p class="verdict yes">Yes, and you can check it yourself</p>`;
+        : `<p class="verdict yes">Yes, and you can check that yourself</p>`;
 
   const skill = scored.length
     ? `<p class="verdict">${scored.length} of ${rows.length} windows scored</p>`
-    : `<p class="verdict pending">Not known yet</p>`;
+    : `<p class="verdict pending">Too early to say</p>`;
 
   el.className = "standing";
   el.innerHTML = `
     <div>
-      <h3>Is the record honest?</h3>
+      <h3>Can these predictions be trusted as genuine?</h3>
       ${integrity}
       <ul>
-        <li><span>forecasts published</span> <b>${published.length}</b></li>
-        <li><span>filed after their window opened</span> <b class="${late ? "bad" : "good"}">${late}</b></li>
-        <li><span>windows missed entirely</span> <b class="${gaps ? "bad" : "good"}">${gaps}</b></li>
+        <li><span>predictions made</span> <b>${published.length}</b></li>
+        <li><span>written down too late to count</span> <b class="${late ? "bad" : "good"}">${late}</b></li>
+        <li><span>days skipped, no prediction made</span> <b class="${gaps ? "bad" : "good"}">${gaps}</b></li>
         <li><span>smallest head start</span> <b class="${late ? "bad" : "good"}">${leads.length ? signedHours(Math.min(...leads)) : "n/a"}</b></li>
       </ul>
     </div>
     <div>
-      <h3>Are the forecasts any good?</h3>
+      <h3>Are the predictions actually any good?</h3>
       ${skill}
       <ul>
-        <li><span>windows scored so far</span> <b>${scored.length}</b></li>
-        <li><span>first verdict due</span> <b>${due ? due.toISOString().slice(0, 10) : "n/a"}</b></li>
-        <li><span>days until then</span> <b>${days === null ? "n/a" : days}</b></li>
-        <li><span>why the wait</span> <b>45 day freeze</b></li>
+        <li><span>results in so far</span> <b>${scored.length}</b></li>
+        <li><span>first result due</span> <b>${due ? due.toISOString().slice(0, 10) : "n/a"}</b></li>
+        <li><span>days to wait</span> <b>${days === null ? "n/a" : days}</b></li>
+        <li><span>waiting because</span> <b>records keep changing</b></li>
       </ul>
     </div>
     ${failures.length ? `<div class="alert" style="grid-column:1/-1">${failureMarkup(failures)}</div>` : ""}`;
@@ -476,11 +529,11 @@ function renderChart(rows, failures) {
     const start = ms(r.window_start_utc);
     const end = ms(r.window_end_utc);
     const lead = r.manifest.lead_hours;
-    const label = `${r.model} ${r.stratum} ${r.horizon}, committed ` +
-      `${fmtDateTime(r.manifest.published_at_utc)}, ${lead} hours before its window opened ` +
-      `${fmtDateTime(r.window_start_utc)}`;
+    const label = `${words(STRATUM_WORDS, r.stratum)} over ${words(HORIZON_WORDS, r.horizon)}, ` +
+      `${r.model} method: written down ${fmtDateTime(r.manifest.published_at_utc)}, ` +
+      `${lead} hours before the period began ${fmtDateTime(r.window_start_utc)}`;
     return `<li class="track">
-      <div class="track-name">${esc(r.model)} <span class="dim">${esc(r.stratum)} / ${esc(r.horizon)}</span></div>
+      <div class="track-name">${esc(words(STRATUM_WORDS, r.stratum))} <span class="dim">${esc(words(HORIZON_WORDS, r.horizon))} &middot; ${esc(r.model)}</span></div>
       <div class="track-rail" role="img" aria-label="${esc(label)}">
         <span class="track-lead" style="left:${pct(pub)}%;width:${pct(start) - pct(pub)}%"></span>
         <span class="track-window" style="left:${pct(start)}%;width:${pct(end) - pct(start)}%"></span>
@@ -505,10 +558,6 @@ function renderChart(rows, failures) {
   el.innerHTML = `
     <div class="axis"><span>${fmtDate(new Date(lo).toISOString())}</span><span>${fmtDate(new Date(hi).toISOString())}</span></div>
     <ul class="tracks">${tracks}</ul>
-    <div class="legend">
-      <span><i class="swatch"></i> lead: committed, window not yet open</span>
-      <span><i class="swatch win"></i> the window being forecast</span>
-    </div>
     <dl class="figures">
       <div><dt>forecasts</dt><dd>${published.length}</dd></div>
       <div><dt>smallest lead</dt><dd class="accent">${leads.length ? signedHours(Math.min(...leads)) : "n/a"}</dd></div>
@@ -550,11 +599,11 @@ function renderTable(rows, failures) {
     return `<tr>
       <td class="num">${fmtDate(r.window_start_utc)}</td>
       <td>${esc(r.model)}</td>
-      <td>${esc(r.horizon)}</td>
-      <td>${esc(r.stratum)}</td>
+      <td>${esc(words(HORIZON_WORDS, r.horizon))}</td>
+      <td>${esc(words(STRATUM_WORDS, r.stratum))}</td>
       <td class="num">${m ? fmtDateTime(m.published_at_utc) : "&mdash;"}</td>
       <td class="${m ? "lead-cell" : "num"}">${m && typeof m.lead_hours === "number" ? signedHours(m.lead_hours) : "&mdash;"}</td>
-      <td><span class="state ${stateClass(r.state)}">${esc(r.state_label || r.state)}</span></td>
+      <td><span class="state ${stateClass(r.state)}">${esc(words(STATE_WORDS, r.state))}</span></td>
       <td class="proof">${proof}</td>
     </tr>`;
   }).join("");

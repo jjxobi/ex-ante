@@ -15,6 +15,7 @@ Hermetic: every file this module writes lands under tmp_path.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import pathlib
 from datetime import datetime, timedelta, timezone
@@ -437,3 +438,56 @@ def test_a_negative_lead_would_be_visible_rather_than_hidden():
     )
 
     assert rendered["manifest"]["lead_hours"] == -6.0
+
+
+def test_a_scored_window_carries_predicted_against_actual():
+    """The one accuracy statement a reader without statistics can read.
+
+    The four consistency tests are more informative and far less legible. A
+    scoreboard that emits only quantiles can describe how a forecast did without
+    ever telling most visitors whether it was right.
+    """
+    evaluation = freeze.FrozenEvaluation(
+        window_start=WINDOW_START,
+        window_end=WINDOW_END,
+        state=freeze.WindowState.SCORED,
+        target_snapshot_date=freeze.target_snapshot_date(WINDOW_END),
+        n_events=12,
+        score=_score_result(12),
+    )
+    rendered = render.render_window(
+        evaluation, model="baseline", horizon="weekly", stratum="shallow"
+    )
+
+    counts = rendered["counts"]
+    assert counts["predicted"] == 5.0
+    assert counts["actual"] == 12.0
+    assert counts["difference"] == 7.0
+    # The mask travels with the numbers, so a reader can tell what region they
+    # were taken over rather than assuming.
+    assert counts["mask_id"] == region.grid_hash()
+
+
+def test_predicted_and_actual_are_never_emitted_across_different_masks():
+    """compare_counts is the guard, and this pins that render goes through it.
+
+    Reading expected_count and observed_count directly would look identical and
+    silently publish a count over the region beside a count over everything,
+    which is the error that once reversed the sign of the D14 finding.
+    """
+    result = _score_result(12)
+    mismatched = dataclasses.replace(
+        result, observed_count=MaskedCount(12.0, "a-different-region")
+    )
+    evaluation = freeze.FrozenEvaluation(
+        window_start=WINDOW_START,
+        window_end=WINDOW_END,
+        state=freeze.WindowState.SCORED,
+        target_snapshot_date=freeze.target_snapshot_date(WINDOW_END),
+        n_events=12,
+        score=mismatched,
+    )
+    with pytest.raises(ValueError):
+        render.render_window(
+            evaluation, model="baseline", horizon="weekly", stratum="shallow"
+        )
