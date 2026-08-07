@@ -353,6 +353,45 @@ NEXT_WINDOW = {
 }
 
 
+# D10 places publication at T-2h and notes that "GitHub Actions cron is
+# routinely delayed by several minutes, so ordinary scheduler jitter costs
+# nothing". The first two scheduled runs measured 210 and 79 minutes late: the
+# forecast run was queued at 22:00 and started at 01:30, by which time the
+# window it was meant to publish had already opened. Rule 1 then correctly
+# refuses to backfill, so the delay would have cost a window permanently rather
+# than costing a late forecast.
+#
+# Publishing more than one window ahead removes that failure mode structurally
+# rather than making it rarer. Each window is first published a full cycle early
+# and refreshed by the following run, so a run that is late, or that Actions
+# drops outright (which it also does under load), costs a refresh instead of a
+# window. Only two consecutive failed runs can now open a gap, and the health
+# check exists to catch that.
+#
+# The refresh is a legal pre-window refit on fresher data, not a rewrite of a
+# live forecast: publish_forecast still refuses once the window has started, so
+# the lookahead cannot be used to revise anything already in effect.
+LOOKAHEAD_WINDOWS = 2
+
+
+def upcoming_windows(
+    horizon: str, now: date | datetime, count: int = LOOKAHEAD_WINDOWS
+) -> list[tuple[datetime, datetime]]:
+    """The next `count` windows of this horizon, earliest first.
+
+    Chains the horizon's own next-window function rather than adding a fixed
+    offset, so the weekly horizon stays on D12's Monday boundary instead of
+    drifting seven days from whatever `now` happened to be.
+    """
+    windows: list[tuple[datetime, datetime]] = []
+    cursor: date | datetime = now
+    for _ in range(count):
+        start, end = NEXT_WINDOW[horizon](cursor)
+        windows.append((start, end))
+        cursor = start
+    return windows
+
+
 # --------------------------------------------------------------------------
 # A full publication cycle: both models, both horizons, both strata
 # --------------------------------------------------------------------------
@@ -364,9 +403,14 @@ def publish_cycle(
     now: date | datetime | None = None,
     output_dir: Path | None = None,
 ) -> PublicationCycle:
-    """Fit both registered models on both strata and publish the next daily
-    and weekly window for each, per the "WHAT PUBLISHES" matrix: 2 models x
-    2 horizons x 2 strata = 8 forecasts.
+    """Fit both registered models on both strata and publish the next
+    `LOOKAHEAD_WINDOWS` daily and weekly windows for each, per the "WHAT
+    PUBLISHES" matrix: 2 models x 2 horizons x 2 strata x 2 windows ahead =
+    16 forecasts.
+
+    Publishing more than one window ahead is what makes a late or dropped
+    scheduler run cost a refresh rather than a window. See LOOKAHEAD_WINDOWS
+    for the measurements that forced it.
 
     `events` is the full loaded catalogue (`eq.storage.read_parquet` output)
     fitting is done against; `input_catalogue_path` is the committed snapshot
@@ -392,20 +436,20 @@ def publish_cycle(
         for stratum in STRATA:
             fitted = fit_fn(events, stratum)
             for horizon in HORIZONS:
-                window_start, window_end = NEXT_WINDOW[horizon](reference)
-                separable = forecast_fn(fitted, window_start, window_end)
-                result = publish_forecast(
-                    model=model,
-                    horizon=horizon,
-                    stratum=stratum,
-                    window_start=window_start,
-                    window_end=window_end,
-                    separable=separable,
-                    input_catalogue_hash=input_hash,
-                    model_version=MODEL_VERSIONS[model],
-                    now=reference,
-                    output_dir=output_dir,
-                )
-                published.append(result)
+                for window_start, window_end in upcoming_windows(horizon, reference):
+                    separable = forecast_fn(fitted, window_start, window_end)
+                    result = publish_forecast(
+                        model=model,
+                        horizon=horizon,
+                        stratum=stratum,
+                        window_start=window_start,
+                        window_end=window_end,
+                        separable=separable,
+                        input_catalogue_hash=input_hash,
+                        model_version=MODEL_VERSIONS[model],
+                        now=reference,
+                        output_dir=output_dir,
+                    )
+                    published.append(result)
 
     return PublicationCycle(published=published, input_catalogue_hash=input_hash)

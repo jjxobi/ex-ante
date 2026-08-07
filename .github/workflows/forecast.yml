@@ -60,10 +60,15 @@ jobs:
         run: python -m eq.cli snapshot
 
       - name: Publish the next daily and weekly windows
-        # 2 models x 2 horizons x 2 strata = 8 forecasts. Rule 1 (D11) is
-        # enforced per window inside eq.publish.publish_forecast: this step
-        # fails loudly, rather than silently publishing fewer than 8, if any
-        # single window's start has already passed.
+        # 2 models x 2 horizons x 2 strata x 2 windows ahead = 16 forecasts.
+        # Rule 1 (D11) is enforced per window inside eq.publish.publish_forecast:
+        # this step fails loudly, rather than silently publishing fewer than 16,
+        # if any single window's start has already passed.
+        #
+        # The two-window lookahead is why a late run costs a refresh rather than
+        # a window. This cron was measured 210 minutes late on its first firing,
+        # landing after the window it was meant to publish had opened. See the
+        # 2026-08-07 addendum to D10.
         run: python -m eq.cli publish-cycle
 
       - name: Score due windows and render the scoreboard

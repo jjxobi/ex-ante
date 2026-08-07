@@ -816,6 +816,35 @@ window opening at T. GitHub Actions cron is routinely delayed by several
 minutes, and the refusal boundary is the window start rather than the run time,
 so ordinary scheduler jitter costs nothing.
 
+**Addendum, 2026-08-07: the jitter estimate above was wrong, measured.** The
+decision stands; the reasoning under it did not survive contact with the
+scheduler. The first two scheduled runs were queued **210 minutes** late
+(forecast, due 22:00, started 01:30:04Z) and **79 minutes** late (health, due
+06:30, started 07:49:18Z). The forecast run itself took 86 seconds, so the time
+went to queueing, not to work. "Several minutes" understated it by more than an
+order of magnitude, and 210 minutes against a 2 hour margin means the run landed
+*after* the window it was meant to publish had already opened.
+
+Nothing was lost, because a manual dispatch earlier that day had already covered
+the window, but the failure mode is severe and one-way: a run delayed past
+midnight publishes the window after next, and Rule 1 forbids ever backfilling
+the one it skipped. That is a permanent hole in the record caused by queue
+latency.
+
+The fix is not a larger margin, which only makes the gap rarer, and would not
+help at all against a scheduled run that Actions drops entirely, which it also
+does under load. `eq.publish.LOOKAHEAD_WINDOWS` now publishes the next **two**
+windows of each horizon every cycle, so every window is first published a full
+cycle early and refreshed on the following run. A late or dropped run costs a
+refresh rather than a window, and only two consecutive failures can open a gap.
+
+The lead time itself is unchanged: the T-2h publication still happens whenever
+the scheduler is punctual. The lookahead sits underneath it as redundancy, and
+the refresh is a legal pre-window refit, since `publish_forecast` still refuses
+once a window has started. This is recorded rather than quietly corrected for
+the same reason D3 and D13.4 keep what they rejected: a premise that was falsified
+by measurement is more useful to a reader than one silently replaced.
+
 **Commit authorship.** Scheduled workflow commits are authored
 `github-actions[bot]`. Human commits are authored
 `Jesse O'Brien <jesse@jesse-obrien.com>`. These are deliberately distinguishable

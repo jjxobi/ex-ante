@@ -323,9 +323,15 @@ def cycle_result(tmp_path_factory, events):
     return result, output_dir
 
 
-def test_publish_cycle_produces_exactly_eight_forecasts(cycle_result):
+def test_publish_cycle_produces_exactly_sixteen_forecasts(cycle_result):
+    """2 models x 2 horizons x 2 strata x 2 windows ahead.
+
+    Was eight until the first two scheduled runs measured 210 and 79 minutes
+    late. Publishing only the next window meant a run delayed past midnight
+    skipped a window that Rule 1 then forbade backfilling.
+    """
     result, _output_dir = cycle_result
-    assert len(result.published) == 8
+    assert len(result.published) == 16
     combos = {(p.model, p.horizon, p.stratum) for p in result.published}
     expected = {
         (model, horizon, stratum)
@@ -334,6 +340,16 @@ def test_publish_cycle_produces_exactly_eight_forecasts(cycle_result):
         for stratum in publish.STRATA
     }
     assert combos == expected
+
+    # Each combination covers LOOKAHEAD_WINDOWS distinct, consecutive windows,
+    # so the count comes from real lookahead rather than from duplicates.
+    for combo in expected:
+        starts = sorted(
+            p.manifest["window_start_utc"]
+            for p in result.published
+            if (p.model, p.horizon, p.stratum) == combo
+        )
+        assert len(set(starts)) == publish.LOOKAHEAD_WINDOWS, combo
 
 
 def test_publish_cycle_every_forecast_has_a_manifest_on_disk(cycle_result):
@@ -354,13 +370,75 @@ def test_publish_cycle_input_catalogue_hash_matches_the_fixture_file(cycle_resul
 def test_publish_cycle_total_bytes_and_file_names(cycle_result):
     """Not a correctness assertion so much as a fixed record of what a real
     cycle produces, for the acceptance report: file names and total bytes on
-    disk across all 16 files (8 forecasts + 8 manifests).
+    disk across all 32 files (16 forecasts + 16 manifests).
     """
     result, output_dir = cycle_result
     all_files = sorted(output_dir.rglob("*.json"))
-    assert len(all_files) == 16
+    assert len(all_files) == 32
     total_bytes = sum(f.stat().st_size for f in all_files)
     assert total_bytes > 0
     # Every forecast file has a same-named manifest beside it.
     forecast_files = [f for f in all_files if not f.name.endswith(".manifest.json")]
-    assert len(forecast_files) == 8
+    assert len(forecast_files) == 16
+
+
+# --------------------------------------------------------------------------
+# Lookahead: a late or dropped scheduler run must not cost a window
+# --------------------------------------------------------------------------
+
+
+def test_upcoming_windows_returns_consecutive_daily_windows():
+    reference = datetime(2026, 8, 7, 1, 30, tzinfo=timezone.utc)
+    windows = publish.upcoming_windows("daily", reference)
+
+    assert [start for start, _ in windows] == [
+        datetime(2026, 8, 8, tzinfo=timezone.utc),
+        datetime(2026, 8, 9, tzinfo=timezone.utc),
+    ]
+    for start, end in windows:
+        assert end - start == timedelta(days=1)
+
+
+def test_upcoming_weekly_windows_stay_on_the_monday_boundary():
+    """Chained, not offset. A fixed seven day step from an arbitrary reference
+    would drift off D12's Monday boundary."""
+    reference = datetime(2026, 8, 7, 1, 30, tzinfo=timezone.utc)  # a Friday
+    windows = publish.upcoming_windows("weekly", reference)
+
+    assert [start for start, _ in windows] == [
+        datetime(2026, 8, 10, tzinfo=timezone.utc),
+        datetime(2026, 8, 17, tzinfo=timezone.utc),
+    ]
+    assert all(start.weekday() == 0 for start, _ in windows)
+
+
+def test_a_late_run_still_covers_the_window_an_on_time_run_would_have():
+    """The failure this exists to prevent, stated as a test.
+
+    Measured on the first two scheduled runs, GitHub queued them 210 and 79
+    minutes late. A run intended for 22:00 that lands at 01:30 has missed the
+    window it was meant to publish. With a lookahead, the previous run already
+    covered it, so the delay costs a refresh rather than a permanent gap that
+    Rule 1 forbids ever filling.
+    """
+    on_time = datetime(2026, 8, 6, 22, 0, tzinfo=timezone.utc)
+    delayed = datetime(2026, 8, 8, 1, 30, tzinfo=timezone.utc)  # next day's run, late
+
+    covered = {start for start, _ in publish.upcoming_windows("daily", on_time)}
+    covered |= {start for start, _ in publish.upcoming_windows("daily", delayed)}
+
+    # The window the delayed run itself can no longer publish.
+    skipped_by_the_late_run = datetime(2026, 8, 8, tzinfo=timezone.utc)
+    assert skipped_by_the_late_run in covered, (
+        "a run delayed past midnight must not leave the window it skipped "
+        "unpublished, or Rule 1 makes that gap permanent"
+    )
+
+
+def test_lookahead_windows_are_all_still_in_the_future():
+    """Every window the cycle targets must be publishable under Rule 1, or the
+    extra lookahead would simply raise instead of protecting anything."""
+    reference = datetime(2026, 8, 7, 1, 30, tzinfo=timezone.utc)
+    for horizon in publish.HORIZONS:
+        for start, _ in publish.upcoming_windows(horizon, reference):
+            assert start > reference
