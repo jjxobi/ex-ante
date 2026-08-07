@@ -6,104 +6,141 @@
 <title>Ex Ante: a publicly scored New Zealand earthquake forecast</title>
 <meta name="description" content="Probabilistic earthquake rate forecasts for New Zealand, committed to a public git history before the window they describe, then scored in the open.">
 <style>
+  /* ------------------------------------------------------------------
+     Neutrals carry a green-slate bias so they read as chosen rather than
+     inherited, and stay out of the warm-cream register. Three semantic
+     hues, none decorative:
+       --lead    the gap between committing and the window opening. This is
+                 the entire argument, so it is the only saturated colour
+                 that appears at size.
+       --window  the forecast period itself.
+       --fault   a gap in the record, or a violation.
+     ------------------------------------------------------------------ */
   :root {
-    --bg: #fbfbf9;
-    --fg: #16161a;
-    --muted: #5f6169;
-    --line: #e0e0dc;
-    --card: #ffffff;
-    --accent: #1f6f5c;
-    --warn: #8a5a12;
-    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-    /* A serif display face carries the hierarchy against the sans body, which
-       suits a page that is essentially a scientific record. Deliberately drawn
-       from system stacks: this page has to keep rendering unattended for years,
-       and a webfont CDN is exactly the kind of outside dependency the rest of
-       this project refuses to take. */
-    --display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --ground: #f1f4f3; --raised: #fafcfb; --ink: #131a18; --muted: #58625f;
+    --rule: #d3dad8; --lead: #0f6b64; --window: #8a5a0e; --fault: #9e2f24;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #131316; --fg: #ecebe8; --muted: #9a9aa2; --line: #2c2c31;
-      --card: #1a1a1e; --accent: #6fd0b2; --warn: #e0b463;
+      --ground: #0e1211; --raised: #151b1a; --ink: #e7ecea; --muted: #939e9b;
+      --rule: #262e2c; --lead: #58cfc2; --window: #d7a445; --fault: #ef8b7e;
     }
   }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--bg); color: var(--fg);
-    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
+  :root[data-theme="dark"] {
+    --ground: #0e1211; --raised: #151b1a; --ink: #e7ecea; --muted: #939e9b;
+    --rule: #262e2c; --lead: #58cfc2; --window: #d7a445; --fault: #ef8b7e;
   }
-  .wrap { max-width: 860px; margin: 0 auto; padding: 0 20px 96px; }
-  header { padding: 72px 0 40px; border-bottom: 1px solid var(--line); }
-  h1 { font-family: var(--display); font-size: 3.1rem; font-weight: 600; line-height: 1.05;
-       margin: 0 0 16px; letter-spacing: -0.015em; }
-  .lede { font-size: 1.15rem; color: var(--muted); margin: 0; max-width: 62ch; }
-  .defn { font-family: var(--display); font-style: italic; color: var(--muted);
-          font-size: 1rem; margin: 18px 0 0; }
-  h2 { font-family: var(--display); font-size: 1.5rem; font-weight: 600;
-       margin: 56px 0 6px; letter-spacing: -0.005em; }
-  h2 + .sub { color: var(--muted); margin: 0 0 20px; font-size: .95rem; max-width: 64ch; }
-  p { max-width: 68ch; }
+  :root[data-theme="light"] {
+    --ground: #f1f4f3; --raised: #fafcfb; --ink: #131a18; --muted: #58625f;
+    --rule: #d3dad8; --lead: #0f6b64; --window: #8a5a0e; --fault: #9e2f24;
+  }
 
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 32px 0 0; }
-  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
-  .stat .n { font-size: 2rem; font-weight: 620; letter-spacing: -0.02em; display: block; line-height: 1.1; }
-  .stat .k { color: var(--muted); font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; margin-top: 6px; display: block; }
-  .stat.good .n { color: var(--accent); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink);
+         font-family: var(--sans); font-size: 16px; line-height: 1.6;
+         -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 0 24px 120px; }
 
-  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 10px; }
-  table { border-collapse: collapse; width: 100%; font-size: .9rem; min-width: 720px; }
-  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-  th { font-size: .76rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
-  td.mono, .mono { font-family: var(--mono); font-size: .84rem; }
-  .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .75rem; border: 1px solid var(--line); color: var(--muted); }
-  .pill.ok { color: var(--accent); border-color: var(--accent); }
-  .pill.gap { color: var(--warn); border-color: var(--warn); }
-  .lead { color: var(--accent); font-weight: 600; }
+  /* Hierarchy from weight, size and tracking. The display serif that used to
+     do this job was doing a scale's work with a typeface. */
+  h1 { font-size: clamp(2.4rem, 7vw, 4rem); font-weight: 800; line-height: 1.02;
+       letter-spacing: -0.035em; margin: 0; text-wrap: balance; }
+  h2 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.018em;
+       margin: 0 0 8px; text-wrap: balance; }
+  p { margin: 0 0 16px; max-width: 70ch; }
+  .lede { font-size: 1.16rem; color: var(--muted); max-width: 60ch; margin: 20px 0 0; }
+  .sub { color: var(--muted); margin: 0 0 24px; max-width: 66ch; }
+  section { margin-top: 76px; }
+  header { padding: 76px 0 0; }
+  .defn { font-family: var(--mono); font-size: .82rem; color: var(--muted); margin: 26px 0 0; }
 
-  pre { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-        padding: 16px; overflow-x: auto; font-family: var(--mono); font-size: .85rem; line-height: 1.55; }
+  /* ------------------------------------------------------------------
+     The timeline. Each forecast is one track: a commitment mark, the
+     measured gap, then the window it describes. Positioned in percentages
+     against a shared axis, so it reflows at any width with no redraw.
+     ------------------------------------------------------------------ */
+  .chart { margin: 40px 0 0; }
+  .axis { display: flex; justify-content: space-between; font-family: var(--mono);
+          font-size: .72rem; color: var(--muted); padding-bottom: 6px;
+          border-bottom: 1px solid var(--rule); }
+  .tracks { list-style: none; margin: 0; padding: 0; }
+  .track { display: grid; grid-template-columns: 200px 1fr 86px; align-items: center;
+           gap: 16px; padding: 7px 0; border-bottom: 1px solid var(--rule); }
+  .track-name { font-size: .82rem; }
+  .track-name .dim { color: var(--muted); }
+  .track-rail { position: relative; height: 22px; }
+  .track-lead, .track-window { position: absolute; top: 50%;
+    transform: translateY(-50%); transform-origin: left center; }
+  .track-lead { height: 3px; background: var(--lead); }
+  .track-window { height: 15px; border: 1px solid var(--window);
+                  background: color-mix(in srgb, var(--window) 15%, transparent); }
+  .track-pub { position: absolute; top: 50%; width: 2px; height: 15px; margin-left: -1px;
+               background: var(--lead); transform: translateY(-50%); }
+  .track-lead-value { font-family: var(--mono); font-size: .74rem; color: var(--lead);
+                      text-align: right; font-variant-numeric: tabular-nums; }
+  @media (prefers-reduced-motion: no-preference) {
+    .drawing .track-lead, .drawing .track-window { transform: translateY(-50%) scaleX(0); }
+    .track-lead, .track-window { transition: transform 900ms cubic-bezier(.16,1,.3,1); }
+    .drawing .track-pub, .drawing .track-lead-value { opacity: 0; }
+    .track-pub, .track-lead-value { transition: opacity 500ms ease 250ms; }
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 18px;
+            font-family: var(--mono); font-size: .74rem; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .swatch { width: 22px; height: 3px; background: var(--lead); }
+  .swatch.win { height: 12px; width: 20px; border: 1px solid var(--window); background: none; }
+
+  /* Figures as a ruled reading line, not a row of metric cards. */
+  .figures { display: flex; flex-wrap: wrap; gap: 6px 32px; margin: 28px 0 0;
+             padding-top: 18px; border-top: 1px solid var(--rule);
+             font-family: var(--mono); font-size: .8rem; }
+  .figures div { display: flex; gap: 8px; align-items: baseline; }
+  .figures dt { color: var(--muted); }
+  .figures dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .figures .accent { color: var(--lead); font-weight: 600; }
+
+  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { border-collapse: collapse; width: 100%; font-size: .86rem; min-width: 700px; }
+  th, td { text-align: left; padding: 9px 14px 9px 0;
+           border-bottom: 1px solid var(--rule); white-space: nowrap; }
+  th { font-family: var(--mono); font-size: .7rem; font-weight: 500; color: var(--muted);
+       letter-spacing: .06em; text-transform: uppercase; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  td.lead-cell { font-family: var(--mono); color: var(--lead); font-variant-numeric: tabular-nums; }
+  .state { font-family: var(--mono); font-size: .74rem; color: var(--muted); }
+  .state.scored { color: var(--lead); }
+  .state.gap { color: var(--fault); }
+
+  pre { background: var(--raised); border: 1px solid var(--rule); padding: 18px 20px;
+        overflow-x: auto; font-family: var(--mono); font-size: .82rem;
+        line-height: 1.7; margin: 0 0 20px; }
   code { font-family: var(--mono); font-size: .88em; }
   a { color: inherit; text-decoration-color: var(--muted); text-underline-offset: 3px; }
   a:hover { text-decoration-color: currentColor; }
-  a:focus-visible, :focus-visible {
-    outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px;
-  }
+  a:focus-visible, :focus-visible { outline: 2px solid var(--lead); outline-offset: 3px; }
+  td.proof a { display: inline-block; padding: 7px 10px; margin: -7px -10px;
+               font-family: var(--mono); font-size: .76rem; }
 
-  /* The proof link is the only interactive element inside the table. Padded out
-     to clear the 24px minimum target, with matching negative margin so the row
-     height does not change. */
-  td.proof a { display: inline-block; padding: 7px 10px; margin: -7px -10px; }
+  /* Failure is not emptiness. A payload that cannot be read says so, and never
+     falls through to the sentence used when the record is genuinely empty. */
+  .alert { border: 1px solid var(--fault); padding: 20px 22px; margin: 28px 0 0; }
+  .alert p { margin: 0 0 8px; color: var(--muted); }
+  .alert p:first-child { color: var(--ink); font-weight: 600; }
+  .alert .paths { font-family: var(--mono); font-size: .76rem; margin: 10px 0 0; }
+  .empty { color: var(--muted); padding: 22px 0; max-width: 66ch; white-space: normal; }
+  .loading { color: var(--muted); padding: 22px 0; font-family: var(--mono); font-size: .8rem; }
 
-  /* Failure is not emptiness. When a payload cannot be loaded the page must say
-     so rather than fall through to "no window has opened yet", which would be a
-     confident false claim about the record at the exact moment the page cannot
-     see it. */
-  .alert { background: var(--card); border: 1px solid var(--warn); border-radius: 10px;
-           padding: 20px 22px; margin: 32px 0 0; }
-  .alert p { margin: 6px 0 0; color: var(--muted); max-width: 66ch; }
-  .alert .paths { font-family: var(--mono); font-size: .8rem; margin-top: 10px; }
-  td.failed { white-space: normal; color: var(--muted); padding: 22px 12px; }
+  footer { margin-top: 96px; padding-top: 22px; border-top: 1px solid var(--rule);
+           color: var(--muted); font-size: .84rem; }
 
-  .note { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-          padding: 22px 24px; margin: 28px 0; }
-  .note p { margin: 0; color: var(--muted); max-width: 66ch; }
-  .note strong { color: var(--fg); font-weight: 620; }
-  .eyebrow { display: block; font-size: .73rem; text-transform: uppercase; letter-spacing: .1em;
-             color: var(--warn); font-weight: 650; margin-bottom: 10px; }
-  footer { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; }
-  .loading { color: var(--muted); padding: 24px 0; }
-
-  /* The headline is seven characters today, which is the only reason a fixed
-     3.1rem survived narrow viewports. Stepping the scale down means that stays
-     true if the wording ever changes. */
-  @media (max-width: 560px) {
-    header { padding: 48px 0 32px; }
-    h1 { font-size: 2.3rem; }
-    h2 { font-size: 1.3rem; margin-top: 44px; }
-    .lede { font-size: 1.05rem; }
-    .wrap { padding: 0 16px 72px; }
+  @media (max-width: 700px) {
+    header { padding-top: 52px; }
+    section { margin-top: 56px; }
+    .wrap { padding: 0 18px 80px; }
+    .track { grid-template-columns: 1fr 66px; gap: 4px 12px; padding: 10px 0; }
+    .track-name { grid-column: 1 / -1; }
   }
 </style>
 </head>
@@ -111,83 +148,93 @@
 <div class="wrap">
 
 <header>
-  <h1>Ex Ante</h1>
+  <h1>Forecasts, filed before the fact.</h1>
   <p class="lede">Probabilistic earthquake rate forecasts for New Zealand, committed to a public
-  git history <strong>before</strong> the window they describe, then scored in the open against
-  what actually happened.</p>
-  <p class="defn">ex ante &middot; before the event. The opposite of how a backtest reasons.</p>
+  git history before the window they describe, then scored in the open against what happened.</p>
+  <p class="defn">ex ante / before the event. The opposite of how a backtest reasons.</p>
 </header>
 
 <main>
 
-<h2>Why this exists</h2>
-<p class="sub">Every forecasting portfolio shows a backtest. Backtests are cheap and
-unfalsifiable: you fit a model to history, tune until the number looks good, and publish the
-number. Nobody can tell what you tried and discarded.</p>
-<p>This project cannot do that. A forecast is written to git, with a hash and a server side
-timestamp from GitHub, hours before the window it describes opens. The code physically refuses
-to publish a forecast for a window that has already started, so a missed window stays missed
-and shows up below as a permanent gap. There is no version of this record in which a bad
-forecast can be quietly improved after the fact.</p>
+<section aria-labelledby="record-heading">
+  <h2 id="record-heading">Every forecast, and the gap it was filed into</h2>
+  <p class="sub">Each track runs from the moment a forecast was committed to the window it
+  describes. The gap is the argument: it cannot be manufactured afterwards, and the code raises
+  an error rather than writing a forecast once its window has opened.</p>
+  <div class="chart" id="chart" aria-live="polite" aria-busy="true">
+    <p class="loading">Reading the record...</p>
+  </div>
+</section>
 
-<div class="stats" id="stats" aria-live="polite" aria-busy="true">
-  <div class="loading">Loading the record…</div>
-</div>
+<section aria-labelledby="why-heading">
+  <h2 id="why-heading">Why the gap is the point</h2>
+  <p>Every forecasting portfolio shows a backtest. Backtests are cheap and unfalsifiable: fit a
+  model to history, tune until the number looks good, publish the number. Nobody can tell what
+  was tried and discarded.</p>
+  <p>This cannot do that. A forecast is written to git with a content hash and a timestamp
+  GitHub records on its own servers, hours before the window opens. Publishing into a window
+  that has already started raises an error instead of writing a file, so a missed window stays
+  missed and shows below as a permanent gap in the record.</p>
+</section>
 
-<h2>The record</h2>
-<p class="sub" id="record-sub">Every window that has opened so far, with the lead time between
-publication and the window it forecasts.</p>
-<div class="scroll" aria-live="polite" aria-busy="true" id="record-region">
-  <table id="record">
-    <thead>
-      <tr>
-        <th scope="col">Window opens</th><th scope="col">Model</th>
-        <th scope="col">Horizon</th><th scope="col">Stratum</th>
-        <th scope="col">Published</th><th scope="col">Lead</th>
-        <th scope="col">State</th><th scope="col">Proof</th>
-      </tr>
-    </thead>
-    <tbody><tr><td colspan="8" class="loading">Loading…</td></tr></tbody>
-  </table>
-</div>
+<section aria-labelledby="table-heading">
+  <h2 id="table-heading">The record in full</h2>
+  <p class="sub">Every window that has opened so far. Windows still in the future are already
+  forecast, and appear here as they begin.</p>
+  <div class="scroll" id="record-region" aria-live="polite" aria-busy="true">
+    <table id="record">
+      <thead>
+        <tr>
+          <th scope="col">Window</th><th scope="col">Model</th>
+          <th scope="col">Horizon</th><th scope="col">Stratum</th>
+          <th scope="col">Committed</th><th scope="col">Lead</th>
+          <th scope="col">State</th><th scope="col">Proof</th>
+        </tr>
+      </thead>
+      <tbody><tr><td colspan="8" class="loading">Reading the record...</td></tr></tbody>
+    </table>
+  </div>
+</section>
 
-<h2>Verify it yourself</h2>
-<p class="sub">This is the part that matters. Do not take the table above on trust: it is
-generated by the same project it describes.</p>
-<pre>git clone https://github.com/jjxobi/ex-ante
+<section aria-labelledby="verify-heading">
+  <h2 id="verify-heading">Do not trust this page</h2>
+  <p class="sub">It is generated by the project it describes. Check it yourself instead.</p>
+  <pre>git clone https://github.com/jjxobi/ex-ante
 cd ex-ante
 python scripts/audit_history.py --online</pre>
-<p>The audit reads git history rather than the current checkout, so a forecast that was altered
-and altered back cannot look honest. It imports nothing from the forecasting code, because an
-auditor built on the thing it audits inherits its bugs. It refuses to run against a shallow
-clone rather than reporting a clean result it did not earn. Every check is mutation tested:
-disabling any one of them breaks at least one test.</p>
-<p>With <code>--online</code> it also checks each forecast against the GitHub Actions run that
-produced it. That start time is recorded server side and is the one timestamp neither the author
-nor this repository can set.</p>
+  <p>The audit reads git history rather than the current checkout, so a forecast altered and
+  altered back cannot look honest. It imports nothing from the forecasting code, because an
+  auditor built on what it audits inherits its bugs. It refuses to run against a shallow clone
+  rather than report a clean result it did not earn. Every check is mutation tested: disabling
+  any one of them breaks at least one test.</p>
+  <p>With <code>--online</code> each forecast is checked against the GitHub Actions run that
+  produced it. That start time is recorded server side, and is the one timestamp neither the
+  author nor this repository can set.</p>
+</section>
 
-<h2>What it forecasts</h2>
-<p class="sub">Rates, not alarms. No prediction of individual earthquakes.</p>
-<p>Expected count of magnitude 3.0 and above events per cell per window, over a frozen grid of
-4,100 cells at 0.1&deg; resolution, split into two depth strata at 41 km and scored separately.
-The grid, the magnitude threshold and the depth boundary were fixed before publication began and
-are hash locked, so they cannot be quietly retuned to flatter a result. Scoring uses the standard
-CSEP consistency tests.</p>
+<section aria-labelledby="what-heading">
+  <h2 id="what-heading">What is actually being forecast</h2>
+  <p class="sub">Rates, not alarms. No prediction of individual earthquakes.</p>
+  <p>Expected count of magnitude 3.0 and above events per cell per window, across a frozen grid
+  of 4,100 cells at 0.1 degree resolution, split into two depth strata at 41 km and scored
+  separately. The grid, the magnitude threshold and the depth boundary were fixed before
+  publication began and are locked by hash, so they cannot be quietly retuned to flatter a
+  result. Scoring uses the standard CSEP consistency tests.</p>
+</section>
 
-<div class="note" id="deficiency">
-  <span class="eyebrow">A known deficiency, published deliberately</span>
-  <p><strong>The baseline model over predicts the event rate by 32.7%</strong> against its own
-  fitting window. This was measured before going live and recorded rather than repaired, because
-  a forecast claiming no known weaknesses is the least believable kind. It is also the target the
-  next model has to beat.</p>
-</div>
+<section aria-labelledby="flaw-heading">
+  <h2 id="flaw-heading">The baseline is wrong by 32.7 percent, on purpose</h2>
+  <p>It over predicts the event rate against its own fitting window. That was measured before
+  going live and recorded rather than repaired, because a forecast claiming no known weaknesses
+  is the least believable kind. It is also the number the next model has to beat, and leaving it
+  in place is what makes that comparison mean anything.</p>
+</section>
 
 </main>
 
 <footer>
-  <p>Catalogue data from <a href="https://www.geonet.org.nz/">GeoNet</a>.
-  Source, decisions and full methodology at
-  <a href="https://github.com/jjxobi/ex-ante">github.com/jjxobi/ex-ante</a>.</p>
+  <p>Catalogue data from <a href="https://www.geonet.org.nz/">GeoNet</a>. Source, decisions and
+  full methodology at <a href="https://github.com/jjxobi/ex-ante">github.com/jjxobi/ex-ante</a>.</p>
   <p id="generated"></p>
 </footer>
 
@@ -203,18 +250,18 @@ const TOTAL = MODELS.length * HORIZONS.length * STRATA.length;
 const fmtDate = iso => new Date(iso).toISOString().slice(0, 10);
 const fmtDateTime = iso => new Date(iso).toISOString().slice(0, 16).replace("T", " ") + "Z";
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const ms = iso => new Date(iso).getTime();
 
 function stateClass(state) {
-  if (state === "SCORED") return "ok";
+  if (state === "SCORED") return "scored";
   if (state === "NEVER_PUBLISHED" || state === "SCORING_FAILED") return "gap";
   return "";
 }
 
 async function load() {
-  // Each request resolves to either a payload or a named failure. A rejected
-  // fetch used to be dropped silently, which let a total loading failure fall
-  // through to the empty-record message: the page would state that no window
-  // had opened yet at the exact moment it could not see the record at all.
+  // Each request resolves to a payload or a named failure. Dropping a rejection
+  // would let a total loading failure fall through to the empty-record wording,
+  // which asserts something false at the moment the page can see nothing.
   const jobs = [];
   for (const m of MODELS) for (const h of HORIZONS) for (const s of STRATA) {
     const path = `${m}/${h}/${s}.json`;
@@ -243,76 +290,108 @@ async function load() {
     a.stratum.localeCompare(b.stratum)
   );
 
-  renderStats(rows, failures);
+  renderChart(rows, failures);
   renderTable(rows, failures);
 
   if (generated) {
     document.getElementById("generated").textContent =
-      "Record last rebuilt " + fmtDateTime(generated) + ". This page updates itself daily.";
+      "Record rebuilt " + fmtDateTime(generated) + ". This page reads it fresh on every visit.";
   }
-  for (const id of ["stats", "record-region"]) {
+  for (const id of ["chart", "record-region"]) {
     const el = document.getElementById(id);
     if (el) el.setAttribute("aria-busy", "false");
   }
 }
 
-function failureNotice(failures) {
-  const complete = failures.length === TOTAL;
-  return `<span class="eyebrow">${complete ? "The record could not be loaded" : "This view is incomplete"}</span>
-    <p>${complete
+function failureMarkup(failures) {
+  const all = failures.length === TOTAL;
+  return `<p>${all ? "The record could not be loaded." : "This view is incomplete."}</p>
+    <p>${all
       ? `None of the ${TOTAL} scoreboard files could be read, so this page cannot say anything
          about the record. That is a failure to load the page, not evidence that no forecasts
-         exist. The record itself lives in git and can be checked directly with the audit below.`
-      : `${failures.length} of ${TOTAL} scoreboard files could not be read, so the figures and
-         the table below are missing part of the record. Treat them as a lower bound, not as
-         the whole picture.`}</p>
-    <p class="paths">${failures.map(f => esc(f.path) + " &middot; " + esc(f.failed)).join("<br>")}</p>`;
+         exist. The record lives in git and can be checked directly with the audit above.`
+      : `${failures.length} of ${TOTAL} scoreboard files could not be read, so what follows is
+         missing part of the record. Treat it as a lower bound, not the whole picture.`}</p>
+    <p class="paths">${failures.map(f => esc(f.path) + "  " + esc(f.failed)).join("<br>")}</p>`;
 }
 
-function renderStats(rows, failures) {
-  const el = document.getElementById("stats");
+function renderChart(rows, failures) {
+  const el = document.getElementById("chart");
 
   if (failures.length === TOTAL) {
-    el.className = "alert";
-    el.innerHTML = failureNotice(failures);
+    el.className = "chart alert";
+    el.innerHTML = failureMarkup(failures);
+    return;
+  }
+  const plotted = rows.filter(r => r.manifest && r.manifest.published_at_utc);
+  if (!plotted.length) {
+    el.className = "chart";
+    el.innerHTML = `<p class="empty">No window has opened yet, so there is nothing to plot.
+      Forecasts are already committed for windows still in the future; each track appears here
+      as its window begins.</p>` +
+      (failures.length ? `<div class="alert">${failureMarkup(failures)}</div>` : "");
     return;
   }
 
-  const published = rows.filter(r => r.manifest);
-  const scored = rows.filter(r => r.state === "SCORED");
-  const gaps = rows.filter(r => r.state === "NEVER_PUBLISHED");
-  const leads = published.map(r => r.manifest.lead_hours).filter(v => typeof v === "number");
-  const minLead = leads.length ? Math.min(...leads) : null;
+  // One shared axis: earliest commitment to latest window close.
+  const t0 = Math.min(...plotted.map(r => ms(r.manifest.published_at_utc)));
+  const t1 = Math.max(...plotted.map(r => ms(r.window_end_utc)));
+  const pad = (t1 - t0) * 0.04 || 36e5;
+  const lo = t0 - pad, hi = t1 + pad;
+  const pct = t => ((t - lo) / (hi - lo)) * 100;
 
-  // The soonest window still waiting on its T+45 freeze.
+  const tracks = plotted.map(r => {
+    const pub = ms(r.manifest.published_at_utc);
+    const start = ms(r.window_start_utc);
+    const end = ms(r.window_end_utc);
+    const lead = r.manifest.lead_hours;
+    const label = `${r.model} ${r.stratum} ${r.horizon}, committed ` +
+      `${fmtDateTime(r.manifest.published_at_utc)}, ${lead} hours before its window opened ` +
+      `${fmtDateTime(r.window_start_utc)}`;
+    return `<li class="track">
+      <div class="track-name">${esc(r.model)} <span class="dim">${esc(r.stratum)} / ${esc(r.horizon)}</span></div>
+      <div class="track-rail" role="img" aria-label="${esc(label)}">
+        <span class="track-lead" style="left:${pct(pub)}%;width:${pct(start) - pct(pub)}%"></span>
+        <span class="track-window" style="left:${pct(start)}%;width:${pct(end) - pct(start)}%"></span>
+        <span class="track-pub" style="left:${pct(pub)}%"></span>
+      </div>
+      <div class="track-lead-value">+${lead.toFixed(1)}h</div>
+    </li>`;
+  }).join("");
+
+  const published = rows.filter(r => r.manifest);
+  const scored = rows.filter(r => r.state === "SCORED").length;
+  const gaps = rows.filter(r => r.state === "NEVER_PUBLISHED").length;
+  const leads = published.map(r => r.manifest.lead_hours).filter(v => typeof v === "number");
   let nextScore = null;
   for (const r of rows) {
     if (r.state !== "PUBLISHED_NOT_YET_SCOREABLE") continue;
-    const due = new Date(new Date(r.window_end_utc).getTime() + FREEZE_DAYS * 86400000);
+    const due = new Date(ms(r.window_end_utc) + FREEZE_DAYS * 86400000);
     if (!nextScore || due < nextScore) nextScore = due;
   }
 
-  const cards = [
-    { n: published.length, k: "forecasts on the record", good: true },
-    { n: minLead === null ? "&mdash;" : minLead.toFixed(0) + "h",
-      k: "smallest lead, none negative", good: true },
-    { n: scored.length, k: "scored so far" },
-    { n: gaps.length, k: gaps.length === 1 ? "permanent gap" : "permanent gaps" },
-  ];
-  if (nextScore) {
-    cards.push({ n: nextScore.toISOString().slice(0, 10), k: "first scores due" });
-  }
+  el.className = "chart";
+  el.innerHTML = `
+    <div class="axis"><span>${fmtDate(new Date(lo).toISOString())}</span><span>${fmtDate(new Date(hi).toISOString())}</span></div>
+    <ul class="tracks">${tracks}</ul>
+    <div class="legend">
+      <span><i class="swatch"></i> lead: committed, window not yet open</span>
+      <span><i class="swatch win"></i> the window being forecast</span>
+    </div>
+    <dl class="figures">
+      <div><dt>forecasts</dt><dd>${published.length}</dd></div>
+      <div><dt>smallest lead</dt><dd class="accent">${leads.length ? "+" + Math.min(...leads).toFixed(1) + "h" : "n/a"}</dd></div>
+      <div><dt>negative leads</dt><dd class="accent">${leads.filter(v => v < 0).length}</dd></div>
+      <div><dt>scored</dt><dd>${scored}</dd></div>
+      <div><dt>gaps</dt><dd>${gaps}</dd></div>
+      ${nextScore ? `<div><dt>first scores</dt><dd>${nextScore.toISOString().slice(0, 10)}</dd></div>` : ""}
+    </dl>
+    ${failures.length ? `<div class="alert">${failureMarkup(failures)}</div>` : ""}`;
 
-  el.innerHTML = cards.map(c =>
-    `<div class="stat${c.good ? " good" : ""}">
-       <span class="n">${c.n}</span><span class="k">${c.k}</span>
-     </div>`).join("");
-
-  if (failures.length) {
-    const alert = document.createElement("div");
-    alert.className = "alert";
-    alert.innerHTML = failureNotice(failures);
-    el.insertAdjacentElement("afterend", alert);
+  // The one authored moment: the gaps draw open, then the marks arrive.
+  if (matchMedia("(prefers-reduced-motion: no-preference)").matches) {
+    el.classList.add("drawing");
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.remove("drawing")));
   }
 }
 
@@ -320,39 +399,31 @@ function renderTable(rows, failures) {
   const body = document.querySelector("#record tbody");
 
   if (!rows.length) {
-    // Emptiness and failure read identically in a table, so they are never
-    // allowed to render the same sentence.
     body.innerHTML = failures.length
-      ? `<tr><td colspan="8" class="failed">The record could not be loaded, so nothing can be
+      ? `<tr><td colspan="8" class="empty">The record could not be loaded, so nothing can be
          shown here. This is a loading failure, not an empty record.</td></tr>`
-      : `<tr><td colspan="8" class="failed">No window has opened yet. Forecasts are already
-         published for windows still in the future; they appear here once the window they
+      : `<tr><td colspan="8" class="empty">No window has opened yet. Forecasts are already
+         committed for windows still in the future; they appear here once the window they
          describe begins.</td></tr>`;
-    if (!failures.length) {
-      document.getElementById("record-sub").textContent =
-        "Nothing has opened yet. Published forecasts appear here as their windows begin.";
-    }
     return;
   }
 
   body.innerHTML = rows.map(r => {
     const m = r.manifest;
-    // Every row's link said only "run", so a screen reader reading the link list
-    // heard the same word once per forecast, forever.
     const what = `${r.model} ${r.stratum} ${r.horizon} forecast for ${fmtDate(r.window_start_utc)}`;
     const proof = m && m.ci_anchor && m.ci_anchor.run_url
-      ? `<a class="mono" href="${esc(m.ci_anchor.run_url)}"
+      ? `<a href="${esc(m.ci_anchor.run_url)}"
             aria-label="GitHub Actions run that published the ${esc(what)}"
-            title="GitHub recorded this run start time server side">run&nbsp;&#8599;</a>`
-      : '<span class="mono" aria-hidden="true">&mdash;</span>';
+            title="GitHub recorded this run start time on its own servers">run &#8599;</a>`
+      : '<span aria-hidden="true">&mdash;</span>';
     return `<tr>
-      <td class="mono">${fmtDate(r.window_start_utc)}</td>
+      <td class="num">${fmtDate(r.window_start_utc)}</td>
       <td>${esc(r.model)}</td>
       <td>${esc(r.horizon)}</td>
       <td>${esc(r.stratum)}</td>
-      <td class="mono">${m ? fmtDateTime(m.published_at_utc) : "&mdash;"}</td>
-      <td class="mono ${m ? "lead" : ""}">${m && typeof m.lead_hours === "number" ? m.lead_hours.toFixed(1) + "h" : "&mdash;"}</td>
-      <td><span class="pill ${stateClass(r.state)}">${esc(r.state_label || r.state)}</span></td>
+      <td class="num">${m ? fmtDateTime(m.published_at_utc) : "&mdash;"}</td>
+      <td class="${m ? "lead-cell" : "num"}">${m && typeof m.lead_hours === "number" ? "+" + m.lead_hours.toFixed(1) + "h" : "&mdash;"}</td>
+      <td><span class="state ${stateClass(r.state)}">${esc(r.state_label || r.state)}</span></td>
       <td class="proof">${proof}</td>
     </tr>`;
   }).join("");
