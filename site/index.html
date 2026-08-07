@@ -15,6 +15,12 @@
     --accent: #1f6f5c;
     --warn: #8a5a12;
     --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    /* A serif display face carries the hierarchy against the sans body, which
+       suits a page that is essentially a scientific record. Deliberately drawn
+       from system stacks: this page has to keep rendering unattended for years,
+       and a webfont CDN is exactly the kind of outside dependency the rest of
+       this project refuses to take. */
+    --display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -30,10 +36,13 @@
   }
   .wrap { max-width: 860px; margin: 0 auto; padding: 0 20px 96px; }
   header { padding: 72px 0 40px; border-bottom: 1px solid var(--line); }
-  h1 { font-size: 2.6rem; line-height: 1.1; margin: 0 0 14px; letter-spacing: -0.02em; }
+  h1 { font-family: var(--display); font-size: 3.1rem; font-weight: 600; line-height: 1.05;
+       margin: 0 0 16px; letter-spacing: -0.015em; }
   .lede { font-size: 1.15rem; color: var(--muted); margin: 0; max-width: 62ch; }
-  .defn { font-style: italic; color: var(--muted); font-size: .95rem; margin: 18px 0 0; }
-  h2 { font-size: 1.3rem; margin: 52px 0 6px; letter-spacing: -0.01em; }
+  .defn { font-family: var(--display); font-style: italic; color: var(--muted);
+          font-size: 1rem; margin: 18px 0 0; }
+  h2 { font-family: var(--display); font-size: 1.5rem; font-weight: 600;
+       margin: 56px 0 6px; letter-spacing: -0.005em; }
   h2 + .sub { color: var(--muted); margin: 0 0 20px; font-size: .95rem; max-width: 64ch; }
   p { max-width: 68ch; }
 
@@ -59,8 +68,12 @@
   a { color: inherit; text-decoration-color: var(--muted); text-underline-offset: 3px; }
   a:hover { text-decoration-color: currentColor; }
 
-  .note { border-left: 3px solid var(--warn); padding: 4px 0 4px 16px; margin: 22px 0; color: var(--muted); }
-  .note strong { color: var(--fg); }
+  .note { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+          padding: 22px 24px; margin: 28px 0; }
+  .note p { margin: 0; color: var(--muted); max-width: 66ch; }
+  .note strong { color: var(--fg); font-weight: 620; }
+  .eyebrow { display: block; font-size: .73rem; text-transform: uppercase; letter-spacing: .1em;
+             color: var(--warn); font-weight: 650; margin-bottom: 10px; }
   footer { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; }
   .loading { color: var(--muted); padding: 24px 0; }
 </style>
@@ -129,11 +142,11 @@ are hash locked, so they cannot be quietly retuned to flatter a result. Scoring 
 CSEP consistency tests.</p>
 
 <div class="note" id="deficiency">
-  <strong>A known deficiency, published deliberately.</strong>
-  The baseline model over predicts the event rate by 32.7% against its own fitting window. This
-  was measured before going live and recorded rather than repaired, because a forecast that
-  claims to have no known weaknesses is the least believable kind. It is also the target the
-  next model has to beat.
+  <span class="eyebrow">A known deficiency, published deliberately</span>
+  <p><strong>The baseline model over predicts the event rate by 32.7%</strong> against its own
+  fitting window. This was measured before going live and recorded rather than repaired, because
+  a forecast claiming no known weaknesses is the least believable kind. It is also the target the
+  next model has to beat.</p>
 </div>
 
 <footer>
