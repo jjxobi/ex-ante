@@ -353,8 +353,22 @@ const STRATA = ["shallow", "deep"];
 const FREEZE_DAYS = 45;
 const TOTAL = MODELS.length * HORIZONS.length * STRATA.length;
 
-const fmtDate = iso => new Date(iso).toISOString().slice(0, 10);
-const fmtDateTime = iso => new Date(iso).toISOString().slice(0, 16).replace("T", " ") + "Z";
+// Both return null rather than throwing on a value that is missing or not a
+// date. The guards below used to test whether the manifest object existed, not
+// whether the field inside it did, so a payload written by an older version of
+// the renderer, which is exactly what a freshly deployed page reads until the
+// next scheduled run, took the entire page down with a RangeError instead of
+// leaving one cell blank.
+const fmtDate = iso => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+};
+const fmtDateTime = iso => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 16).replace("T", " ") + "Z";
+};
+const DASH = "&mdash;";
+const orDash = v => (v === null || v === undefined ? DASH : v);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const ms = iso => new Date(iso).getTime();
 const signedHours = v => (v >= 0 ? "+" : "") + v.toFixed(1) + "h";
@@ -513,12 +527,21 @@ function renderChart(rows, failures) {
     el.innerHTML = failureMarkup(failures);
     return;
   }
-  const plotted = rows.filter(r => r.manifest && r.manifest.published_at_utc);
+  const plotted = rows.filter(r =>
+    r.manifest &&
+    typeof r.manifest.lead_hours === "number" &&
+    fmtDateTime(r.manifest.published_at_utc) !== null &&
+    fmtDateTime(r.window_start_utc) !== null &&
+    fmtDateTime(r.window_end_utc) !== null);
   if (!plotted.length) {
     el.className = "chart";
-    el.innerHTML = `<p class="empty">No window has opened yet, so there is nothing to plot.
-      Forecasts are already committed for windows still in the future; each track appears here
-      as its window begins.</p>` +
+    el.innerHTML = (rows.length
+      ? `<p class="empty">These predictions were recorded before this page could read the times
+         they were filed, so there is nothing to place on a timeline yet. They are listed in full
+         below. The next scheduled run rewrites this data and the tracks appear then.</p>`
+      : `<p class="empty">No period has begun yet, so there is nothing to plot. Predictions are
+         already recorded for periods still in the future; each track appears here as its period
+         begins.</p>`) +
       (failures.length ? `<div class="alert">${failureMarkup(failures)}</div>` : "");
     return;
   }
@@ -603,12 +626,12 @@ function renderTable(rows, failures) {
             title="GitHub recorded this run start time on its own servers">run &#8599;</a>`
       : '<span aria-hidden="true">&mdash;</span>';
     return `<tr>
-      <td class="num">${fmtDate(r.window_start_utc)}</td>
+      <td class="num">${orDash(fmtDate(r.window_start_utc))}</td>
       <td>${esc(r.model)}</td>
       <td>${esc(words(HORIZON_WORDS, r.horizon))}</td>
       <td>${esc(words(STRATUM_WORDS, r.stratum))}</td>
-      <td class="num">${m ? fmtDateTime(m.published_at_utc) : "&mdash;"}</td>
-      <td class="${m ? "lead-cell" : "num"}">${m && typeof m.lead_hours === "number" ? signedHours(m.lead_hours) : "&mdash;"}</td>
+      <td class="num">${orDash(m && fmtDateTime(m.published_at_utc))}</td>
+      <td class="${m && typeof m.lead_hours === "number" ? "lead-cell" : "num"}">${m && typeof m.lead_hours === "number" ? signedHours(m.lead_hours) : DASH}</td>
       <td><span class="state ${stateClass(r.state)}">${esc(words(STATE_WORDS, r.state))}</span></td>
       <td class="proof">${proof}</td>
     </tr>`;
