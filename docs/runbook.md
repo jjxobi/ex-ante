@@ -52,6 +52,24 @@ As of this writing, this builds 2 models and runs 22 data tests, 24 nodes
 total, all passing, against a catalogue of 61,191 events at magnitude 3.0 and
 above, spanning 2005-01-01 to 2026-08-03.
 
+## The public page
+
+`site/index.html` is served by GitHub Pages through `.github/workflows/pages.yml`.
+
+Pages' "deploy from a branch" setting only offers the repository root or `/docs`
+as a source folder, and neither suits: the root would publish the whole
+repository, and `/docs` already holds this runbook and the design specs. So the
+site is uploaded as an artifact from a workflow instead, which can publish any
+folder.
+
+**One-time setup:** Settings > Pages > Source > **GitHub Actions**. Not "deploy
+from a branch".
+
+The page reads the JSON the forecast run already commits, so it updates itself
+daily with no rebuild. This is the only workflow whose failure is purely
+cosmetic: it never writes to the repository, so it cannot cost a window or
+damage the record.
+
 ## Audit the published record
 
 ```bash

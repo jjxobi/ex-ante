@@ -1,0 +1,58 @@
+name: pages
+
+# Publishes site/ to GitHub Pages.
+#
+# WHY THIS EXISTS RATHER THAN A BRANCH DEPLOY. Pages' "deploy from a branch"
+# option only ever offers the repository root or /docs as the source folder.
+# The root would serve the whole repository, and /docs already holds the
+# runbook and the design specs, so neither fits. Uploading an artifact from a
+# workflow is the one way to publish site/ without reorganising the repository
+# around a limitation of a settings dropdown.
+#
+# This is deliberately decoupled from the forecast pipeline. It reads what the
+# scheduler already committed and never writes to the repository, so a failure
+# here cannot cost a window or corrupt the record. It is the only workflow in
+# this project whose failure is purely cosmetic.
+
+on:
+  push:
+    branches: [main]
+    # The scheduler's daily commit touches site/, so the published page follows
+    # the record automatically. Nothing here needs to run when only source or
+    # documentation changed.
+    paths:
+      - "site/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race. Superseding an in-flight deploy is correct here:
+# the newer commit's site is strictly more current, and unlike the forecast
+# workflow there is nothing to lose by cancelling the older run.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+
+      - name: Upload the rendered site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
