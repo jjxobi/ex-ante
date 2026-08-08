@@ -46,7 +46,7 @@ import os
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-from eq import expander, freeze, paths, publish, region, score
+from eq import anchor, expander, freeze, paths, publish, region, score
 
 # D10: the caveat that must travel with any skill score reported against the
 # baseline. Quoted, not paraphrased, so this file and DECISIONS.md cannot
@@ -198,7 +198,15 @@ def render_window(
         base["manifest"] = {
             "sha256": manifest["sha256"],
             "commit_sha": manifest["anchors"]["commit"]["sha"],
-            "ci_anchor": manifest["anchors"]["ci_run"],
+            # The note is identical on every anchor and is stated once per
+            # payload by render_site instead. Repeating it per entry spent
+            # about a third of the scoreboard on one unchanging sentence, on a
+            # record that gains four entries a day and never shrinks.
+            "ci_anchor": {
+                key: value
+                for key, value in manifest["anchors"]["ci_run"].items()
+                if key != "note"
+            },
             "published_at_utc": published_at,
             "lead_hours": round(lead.total_seconds() / 3600, 1),
         }
@@ -398,6 +406,13 @@ def render_site(scoreboards: dict[str, list[dict]], *, now: date | datetime | No
     reference = datetime.now(timezone.utc) if now is None else _as_utc_datetime(now)
     return {
         "generated_at_utc": _iso(reference),
+        # Said once here rather than on every entry. Named from eq.anchor rather
+        # than copied, so the sentence a reader sees cannot drift from the one
+        # actually written onto the manifests.
+        "anchor_notes": {
+            "present": anchor.CI_PRESENT_NOTE,
+            "absent": anchor.CI_ABSENT_NOTE,
+        },
         "scoreboards": scoreboards,
     }
 

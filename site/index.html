@@ -167,6 +167,7 @@
   .alert p { margin: 0 0 8px; color: var(--muted); }
   .alert p:first-child { color: var(--ink); font-weight: 600; }
   .alert .paths { font-family: var(--mono); font-size: .76rem; margin: 10px 0 0; }
+  .trimmed { color: var(--muted); font-size: .86rem; margin: 16px 0 0; max-width: 66ch; }
   .empty { color: var(--muted); padding: 22px 0; max-width: 66ch; white-space: normal; }
   .loading { color: var(--muted); padding: 22px 0; font-family: var(--mono); font-size: .8rem; }
 
@@ -272,6 +273,7 @@
       <tbody><tr><td colspan="8" class="loading">Reading the record...</td></tr></tbody>
     </table>
   </div>
+  <div id="table-note"></div>
 </section>
 
 <section aria-labelledby="verify-heading">
@@ -353,6 +355,15 @@ const STRATA = ["shallow", "deep"];
 const FREEZE_DAYS = 45;
 const TOTAL = MODELS.length * HORIZONS.length * STRATA.length;
 
+// The record grows by four rows a day and never stops. This page is a view of
+// it, not the record itself: the record is the git history, and the audit
+// script checks all of it. So both displays are capped at the point where they
+// stop being readable, and each says plainly how much it is not showing.
+// Without this the timeline becomes a wall of hairlines within about a month,
+// which destroys the one thing it exists to show.
+const TIMELINE_LIMIT = 20;
+const TABLE_LIMIT = 60;
+
 // Both return null rather than throwing on a value that is missing or not a
 // date. The guards below used to test whether the manifest object existed, not
 // whether the field inside it did, so a payload written by an older version of
@@ -369,6 +380,12 @@ const fmtDateTime = iso => {
 };
 const DASH = "&mdash;";
 const orDash = v => (v === null || v === undefined ? DASH : v);
+
+function trimmedNote(shown, total, what) {
+  if (shown >= total) return "";
+  return `<p class="trimmed">Showing the ${shown} most recent of ${total} ${what}. The rest are
+    not hidden, they are in the repository, and the audit above checks every one of them.</p>`;
+}
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const ms = iso => new Date(iso).getTime();
 const signedHours = v => (v >= 0 ? "+" : "") + v.toFixed(1) + "h";
@@ -547,13 +564,17 @@ function renderChart(rows, failures) {
   }
 
   // One shared axis: earliest commitment to latest window close.
-  const t0 = Math.min(...plotted.map(r => ms(r.manifest.published_at_utc)));
-  const t1 = Math.max(...plotted.map(r => ms(r.window_end_utc)));
+  // Scaled to the tracks actually drawn. Scaling to the whole record would
+  // squeeze every visible gap to nothing as the history grows.
+  const shown = plotted.slice(0, TIMELINE_LIMIT);
+  const t0 = Math.min(...shown.map(r => ms(r.manifest.published_at_utc)));
+  const t1 = Math.max(...shown.map(r => ms(r.window_end_utc)));
   const pad = (t1 - t0) * 0.04 || 36e5;
   const lo = t0 - pad, hi = t1 + pad;
   const pct = t => ((t - lo) / (hi - lo)) * 100;
 
-  const tracks = plotted.map(r => {
+  const drawn = plotted.slice(0, TIMELINE_LIMIT);
+  const tracks = drawn.map(r => {
     const pub = ms(r.manifest.published_at_utc);
     const start = ms(r.window_start_utc);
     const end = ms(r.window_end_utc);
@@ -587,6 +608,7 @@ function renderChart(rows, failures) {
   el.innerHTML = `
     <div class="axis"><span>${fmtDate(new Date(lo).toISOString())}</span><span>${fmtDate(new Date(hi).toISOString())}</span></div>
     <ul class="tracks">${tracks}</ul>
+    ${trimmedNote(drawn.length, plotted.length, "predictions")}
     <dl class="figures">
       <div><dt>forecasts</dt><dd>${published.length}</dd></div>
       <div><dt>smallest lead</dt><dd class="accent">${leads.length ? signedHours(Math.min(...leads)) : "n/a"}</dd></div>
@@ -617,7 +639,8 @@ function renderTable(rows, failures) {
     return;
   }
 
-  body.innerHTML = rows.map(r => {
+  const listed = rows.slice(0, TABLE_LIMIT);
+  body.innerHTML = listed.map(r => {
     const m = r.manifest;
     const what = `${r.model} ${r.stratum} ${r.horizon} forecast for ${fmtDate(r.window_start_utc)}`;
     const proof = m && m.ci_anchor && m.ci_anchor.run_url
@@ -636,6 +659,9 @@ function renderTable(rows, failures) {
       <td class="proof">${proof}</td>
     </tr>`;
   }).join("");
+
+  const note = document.getElementById("table-note");
+  if (note) note.innerHTML = trimmedNote(listed.length, rows.length, "periods");
 }
 
 load();

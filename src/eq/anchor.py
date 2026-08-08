@@ -68,14 +68,14 @@ _COMMIT_NOTE = (
     "check, never proof on its own."
 )
 
-_CI_ABSENT_NOTE = (
+CI_ABSENT_NOTE = (
     "no GITHUB_RUN_ID in the environment: this forecast was not published by "
     "a GitHub Actions run, so it carries no server-side CI timestamp. "
     "Provenance for this forecast rests on the commit alone, which is weaker "
     "than a CI-published forecast."
 )
 
-_CI_PRESENT_NOTE = (
+CI_PRESENT_NOTE = (
     "server-side timestamped by GitHub Actions; the run start time is "
     "retrievable through the Actions API independently of this repository."
 )
@@ -204,7 +204,7 @@ def _ci_anchor() -> dict:
             "workflow": None,
             "repository": None,
             "run_url": None,
-            "note": _CI_ABSENT_NOTE,
+            "note": CI_ABSENT_NOTE,
         }
 
     repository = os.environ.get("GITHUB_REPOSITORY")
@@ -219,7 +219,7 @@ def _ci_anchor() -> dict:
             if repository
             else None
         ),
-        "note": _CI_PRESENT_NOTE,
+        "note": CI_PRESENT_NOTE,
     }
 
 
