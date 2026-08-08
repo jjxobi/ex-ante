@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-08-07T08:34:05Z",
+  "generated_at_utc": "2026-08-07T22:38:05Z",
   "scoreboards": {
     "adaptive/daily/shallow": [
       {
@@ -15,8 +15,6 @@
             "workflow": "forecast"
           },
           "commit_sha": "7cffe3eb48a7534dac4cba35ad231c73b45e0f8c",
-          "lead_hours": 13.0,
-          "published_at_utc": "2026-08-06T10:57:09Z",
           "sha256": "6866a44229636f6a99cc0e7d2435e6b66a9367f43686b4f69e7dcb81cf4b12bd"
         },
         "model": "adaptive",
