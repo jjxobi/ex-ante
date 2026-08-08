@@ -323,11 +323,17 @@ python scripts/audit_history.py --online</pre>
 
 <section aria-labelledby="flaw-heading">
   <h2 id="flaw-heading">A flaw published on purpose</h2>
-  <p>The current method predicts about a third more earthquakes than actually occur. That was
-  measured before any of this went live, and left in place rather than quietly fixed.</p>
-  <p>Two reasons. A forecast claiming no known weaknesses is the least believable kind. And this
-  number is the bar a better method has to clear: patch the flaw now and there is nothing honest
-  left to compare the next attempt against.</p>
+  <p>Over the stretch of past data it was built on, this method expected about a third more
+  earthquakes than actually happened: 15.2 a week against 11.4. That was measured before any of
+  this went live, and left in place rather than quietly fixed.</p>
+  <p>That figure is not a fixed error waiting to be subtracted off, and it is not a promise about
+  the future. The method assumes earthquakes arrive at a steady rate. They do not: one large
+  quake sets off weeks of aftershocks. So it reads high through quiet stretches and would read
+  low during an active one. Whether it runs a third high on days it has never seen is precisely
+  what nobody knows yet, and precisely what the results from September onwards will show.</p>
+  <p>It stays because a forecast claiming no known weaknesses is the least believable kind, and
+  because this is the bar a better method has to clear. Correct it now and there is nothing
+  honest left to measure the next attempt against.</p>
 </section>
 
 </main>
