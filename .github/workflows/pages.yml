@@ -30,12 +30,14 @@ permissions:
   pages: write
   id-token: write
 
-# Never let two deploys race. Superseding an in-flight deploy is correct here:
-# the newer commit's site is strictly more current, and unlike the forecast
-# workflow there is nothing to lose by cancelling the older run.
+# One deploy at a time, and an in-flight one is allowed to finish. My first
+# instinct was to cancel it, on the reasoning that a newer commit's site is
+# strictly more current. GitHub's own template says otherwise, and it is their
+# deployment semantics: a half-finished Pages deploy is a worse state than a
+# slightly stale one. Deferring to the platform here.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -55,4 +57,4 @@ jobs:
 
       - name: Deploy
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
