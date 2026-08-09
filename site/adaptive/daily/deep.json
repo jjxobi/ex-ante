@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-08-08T22:31:45Z",
+  "generated_at_utc": "2026-08-09T22:33:29Z",
   "scoreboards": {
     "adaptive/daily/deep": [
       {
@@ -20,7 +20,7 @@
           "sha256": "e6a6f1e679b0a8188cc32805b566b384de08de9e73468936ec3d7956d8d91d4b"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-08; the T+45 date 2026-09-22 has not arrived yet (now is 2026-08-08)",
+        "reason": "window closes 2026-08-08; the T+45 date 2026-09-22 has not arrived yet (now is 2026-08-09)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -45,12 +45,37 @@
           "sha256": "4d20e3892f4c0a75bba405395b283d2de0a46ec0fe985d015c423db8a223245c"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-09; the T+45 date 2026-09-23 has not arrived yet (now is 2026-08-08)",
+        "reason": "window closes 2026-08-09; the T+45 date 2026-09-23 has not arrived yet (now is 2026-08-09)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
         "window_end_utc": "2026-08-09T00:00:00Z",
         "window_start_utc": "2026-08-08T00:00:00Z"
+      },
+      {
+        "horizon": "daily",
+        "manifest": {
+          "ci_anchor": {
+            "note": "server-side timestamped by GitHub Actions; the run start time is retrievable through the Actions API independently of this repository.",
+            "present": true,
+            "repository": "jjxobi/ex-ante",
+            "run_attempt": "1",
+            "run_id": "31281855174",
+            "run_url": "https://github.com/jjxobi/ex-ante/actions/runs/31281855174",
+            "workflow": "forecast"
+          },
+          "commit_sha": "d7c05bc843c1c5c0388d39e392d2a53c02088cff",
+          "lead_hours": 1.5,
+          "published_at_utc": "2026-08-08T22:31:36Z",
+          "sha256": "40b89ddfbe7aad75cd0683219ba852d73c1b5256e398a7e124f6a5e114e6d6e3"
+        },
+        "model": "adaptive",
+        "reason": "window closes 2026-08-10; the T+45 date 2026-09-24 has not arrived yet (now is 2026-08-09)",
+        "state": "PUBLISHED_NOT_YET_SCOREABLE",
+        "state_label": "published, not yet scoreable",
+        "stratum": "deep",
+        "window_end_utc": "2026-08-10T00:00:00Z",
+        "window_start_utc": "2026-08-09T00:00:00Z"
       }
     ]
   }
