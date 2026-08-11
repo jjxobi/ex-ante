@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-08-10T22:39:47Z",
+  "generated_at_utc": "2026-08-11T22:44:13Z",
   "scoreboards": {
     "adaptive/weekly/deep": [
       {
@@ -20,7 +20,7 @@
           "sha256": "bc7de713308fe5e767116ab508c0a8c7e2a5e2a4cda04c9dd72ebda48602d6f5"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-17; the T+45 date 2026-10-01 has not arrived yet (now is 2026-08-10)",
+        "reason": "window closes 2026-08-17; the T+45 date 2026-10-01 has not arrived yet (now is 2026-08-11)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",

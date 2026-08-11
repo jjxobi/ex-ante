@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-08-10T22:39:37Z",
+  "generated_at_utc": "2026-08-11T22:44:01Z",
   "scoreboards": {
     "baseline/weekly/shallow": [
       {
@@ -20,7 +20,7 @@
           "sha256": "ac10a187900bcaa43dc36da54de895cdd6cb5687b2538fa7ca1bd5fb85c768cd"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-17; the T+45 date 2026-10-01 has not arrived yet (now is 2026-08-10)",
+        "reason": "window closes 2026-08-17; the T+45 date 2026-10-01 has not arrived yet (now is 2026-08-11)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",

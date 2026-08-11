@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-08-10T22:39:33Z",
+  "generated_at_utc": "2026-08-11T22:43:57Z",
   "scoreboards": {
     "baseline/daily/shallow": [
       {
@@ -20,7 +20,7 @@
           "sha256": "881f9a025edf68c21389a1a13addb3200ed97bd3a4c20956cebe22fd89f99ca1"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-08; the T+45 date 2026-09-22 has not arrived yet (now is 2026-08-10)",
+        "reason": "window closes 2026-08-08; the T+45 date 2026-09-22 has not arrived yet (now is 2026-08-11)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
@@ -45,7 +45,7 @@
           "sha256": "812f7bc31a31f4f77c27b0ab3b57b74934ce14d4ab2c4cf672de2c306a5ee67e"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-09; the T+45 date 2026-09-23 has not arrived yet (now is 2026-08-10)",
+        "reason": "window closes 2026-08-09; the T+45 date 2026-09-23 has not arrived yet (now is 2026-08-11)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
@@ -70,7 +70,7 @@
           "sha256": "2d084af592620043926b531c0dc6a21f6b2fe6da86786e220586d6f6ebeb769a"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-10; the T+45 date 2026-09-24 has not arrived yet (now is 2026-08-10)",
+        "reason": "window closes 2026-08-10; the T+45 date 2026-09-24 has not arrived yet (now is 2026-08-11)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
@@ -95,12 +95,37 @@
           "sha256": "00f74a07f3c0cf6b8ed43a07f89c6d6843cfd7b6a1693623da22b9e8b0a34a31"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-11; the T+45 date 2026-09-25 has not arrived yet (now is 2026-08-10)",
+        "reason": "window closes 2026-08-11; the T+45 date 2026-09-25 has not arrived yet (now is 2026-08-11)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
         "window_end_utc": "2026-08-11T00:00:00Z",
         "window_start_utc": "2026-08-10T00:00:00Z"
+      },
+      {
+        "horizon": "daily",
+        "manifest": {
+          "ci_anchor": {
+            "note": "server-side timestamped by GitHub Actions; the run start time is retrievable through the Actions API independently of this repository.",
+            "present": true,
+            "repository": "jjxobi/ex-ante",
+            "run_attempt": "1",
+            "run_id": "31439130746",
+            "run_url": "https://github.com/jjxobi/ex-ante/actions/runs/31439130746",
+            "workflow": "forecast"
+          },
+          "commit_sha": "4a6e8f97e9a1b23dd210d398051af6f3fead817a",
+          "lead_hours": 1.3,
+          "published_at_utc": "2026-08-10T22:39:29Z",
+          "sha256": "5dc2af92c45afa0232763ef7b72517f449d198377038f6abeb74b1af2944a057"
+        },
+        "model": "baseline",
+        "reason": "window closes 2026-08-12; the T+45 date 2026-09-26 has not arrived yet (now is 2026-08-11)",
+        "state": "PUBLISHED_NOT_YET_SCOREABLE",
+        "state_label": "published, not yet scoreable",
+        "stratum": "shallow",
+        "window_end_utc": "2026-08-12T00:00:00Z",
+        "window_start_utc": "2026-08-11T00:00:00Z"
       }
     ]
   }
