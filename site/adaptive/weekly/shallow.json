@@ -3,8 +3,33 @@
     "absent": "no GITHUB_RUN_ID in the environment: this forecast was not published by a GitHub Actions run, so it carries no server-side CI timestamp. Provenance for this forecast rests on the commit alone, which is weaker than a CI-published forecast.",
     "present": "server-side timestamped by GitHub Actions; the run start time is retrievable through the Actions API independently of this repository."
   },
-  "generated_at_utc": "2026-08-08T10:07:42Z",
+  "generated_at_utc": "2026-08-12T08:37:52Z",
   "scoreboards": {
-    "adaptive/weekly/shallow": []
+    "adaptive/weekly/shallow": [
+      {
+        "horizon": "weekly",
+        "manifest": {
+          "ci_anchor": {
+            "present": true,
+            "repository": "jjxobi/ex-ante",
+            "run_attempt": "1",
+            "run_id": "31339636633",
+            "run_url": "https://github.com/jjxobi/ex-ante/actions/runs/31339636633",
+            "workflow": "forecast"
+          },
+          "commit_sha": "a558e312f5c9d54a0ab91738f2f942b71899fb89",
+          "lead_hours": 1.4,
+          "published_at_utc": "2026-08-09T22:33:19Z",
+          "sha256": "e4a430381a36a705fa38cc6fcbc8719e1034d0cc70ccb1c18ae3e75ab1221045"
+        },
+        "model": "adaptive",
+        "reason": "window closes 2026-08-17; the T+45 date 2026-10-01 has not arrived yet (now is 2026-08-12)",
+        "state": "PUBLISHED_NOT_YET_SCOREABLE",
+        "state_label": "published, not yet scoreable",
+        "stratum": "shallow",
+        "window_end_utc": "2026-08-17T00:00:00Z",
+        "window_start_utc": "2026-08-10T00:00:00Z"
+      }
+    ]
   }
 }
