@@ -65,10 +65,14 @@ folder.
 **One-time setup:** Settings > Pages > Source > **GitHub Actions**. Not "deploy
 from a branch".
 
-The page reads the JSON the forecast run already commits, so it updates itself
-daily with no rebuild. This is the only workflow whose failure is purely
-cosmetic: it never writes to the repository, so it cannot cost a window or
-damage the record.
+The page reads the JSON the forecast run already commits, so it needs no
+rebuild step. It deploys when the **forecast workflow finishes**, not when that
+workflow pushes: GitHub does not start a workflow from a push made with the
+default `GITHUB_TOKEN`, so keying off the push left the page frozen on
+2026-08-08 while the record advanced for four more days.
+
+This is the only workflow whose failure is purely cosmetic: it never writes to
+the repository, so it cannot cost a window or damage the record.
 
 ## Audit the published record
 
@@ -83,9 +87,16 @@ clone, or `--online` without `gh`). The last is deliberately distinct: "audited
 and found problems" and "never actually audited" are different answers, and a
 caller that conflates them draws the wrong conclusion from either.
 
-It runs in CI on
-every push to `main`, which includes the scheduler's daily publish commit, so
-the full record is re-audited daily rather than whenever someone remembers.
+It runs from `.github/workflows/audit.yml` after every forecast run, plus a
+daily schedule as a backstop, and again in CI on human pushes.
+
+**That used to be wrong, and the wrongness is worth recording.** This said it
+ran "on every push to `main`, which includes the scheduler's daily publish
+commit". It did not. GitHub deliberately does not start a workflow from a push
+made with the default `GITHUB_TOKEN`, which is what the forecast job pushes
+with, so between 2026-08-08 and 2026-08-12 the record grew every day and
+nothing audited it. A sentence claiming a check runs is worse than no check,
+because it stops anyone looking.
 
 This is the check a reader runs when they do not trust the author, so a few
 properties are deliberate:

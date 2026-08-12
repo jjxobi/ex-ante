@@ -1,0 +1,80 @@
+name: audit
+
+# Audits the published record against git history.
+#
+# WHY THIS IS NOT SIMPLY A STEP IN ci.yml. It is one there too, and that
+# covers human pushes. What it did not cover is the only commits that matter
+# most: the scheduler's own. GitHub does not start a workflow from a push made
+# with the default GITHUB_TOKEN, which is what the forecast job pushes with, so
+# for four days the record grew daily and nothing checked it. The runbook
+# claimed otherwise, which made it worse than an absent check: a guard that
+# reads as running and is not.
+#
+# workflow_run fires on the forecast workflow finishing rather than on its
+# push, so the token rule does not apply. The schedule below is a backstop for
+# the case this project has already been bitten by once, a workflow silently
+# not running at all.
+
+on:
+  workflow_run:
+    workflows: ["forecast"]
+    types: [completed]
+  schedule:
+    # Well clear of the 22:00 forecast and the 06:30 health check, so a delay
+    # in either does not collide with this.
+    - cron: "0 12 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    # A forecast run that failed has nothing new worth auditing, and its own
+    # failure is already loud. Manual and scheduled runs always proceed.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The audit reads every commit that ever touched the record and
+          # refuses to run against a shallow clone rather than report a clean
+          # result it did not earn. Without this it would refuse every time.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # The audit imports nothing from eq and uses only the standard library,
+      # so there is deliberately no install step here. If this ever needs one,
+      # the audit has stopped being independent of what it audits.
+      - name: Audit the published record
+        run: python scripts/audit_history.py
+
+      - name: Open an issue if the record does not support its claims
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          MARKER="<!-- eq-audit -->"
+          EXISTING=$(gh issue list --state open --search "$MARKER in:body" --json number --jq '.[0].number // empty')
+          BODY="$MARKER
+          The history audit failed on $(git rev-parse --short HEAD).
+
+          This means the published record does not support the claims made about
+          it, which is the one failure this project cannot absorb quietly. Run
+          it locally to see the findings:
+
+              python scripts/audit_history.py
+
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "History audit failed: the record does not support its claims" --body "$BODY"
+          fi

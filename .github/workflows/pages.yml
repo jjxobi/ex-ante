@@ -15,11 +15,17 @@ name: pages
 # this project whose failure is purely cosmetic.
 
 on:
+  # The obvious trigger, a push touching site/, covers human pushes only.
+  # GitHub does not start a workflow from a push made with the default
+  # GITHUB_TOKEN, which is exactly what the forecast job pushes with, so for
+  # four days the record advanced daily while the published page stayed on
+  # 2026-08-08. workflow_run keys off the forecast workflow finishing instead
+  # of its push, which the token rule does not apply to.
+  workflow_run:
+    workflows: ["forecast"]
+    types: [completed]
   push:
     branches: [main]
-    # The scheduler's daily commit touches site/, so the published page follows
-    # the record automatically. Nothing here needs to run when only source or
-    # documentation changed.
     paths:
       - "site/**"
       - ".github/workflows/pages.yml"
@@ -42,6 +48,10 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Nothing new to publish if the run that would have produced it failed.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
