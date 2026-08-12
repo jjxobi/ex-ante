@@ -1,6 +1,8 @@
 # Phase 1: Catalogue Pipeline Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> Work through the tasks in order. Each one ends with a passing test and a
+> commit, so the plan can be picked up and put down without losing the thread.
+> Steps use checkbox (`- [ ]`) syntax so progress is visible in the file itself.
 
 **Goal:** Ingest the GeoNet earthquake catalogue into validated parquet, with dbt tests on DuckDB that fail loudly when the data or the upstream API changes.
 

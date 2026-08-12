@@ -17,5 +17,4 @@ dbt/logs/
 dbt/.user.yml
 .venv/
 *.egg-info/
-.superpowers/
 .hypothesis/
