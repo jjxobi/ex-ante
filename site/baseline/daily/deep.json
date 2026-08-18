@@ -3,7 +3,7 @@
     "absent": "no GITHUB_RUN_ID in the environment: this forecast was not published by a GitHub Actions run, so it carries no server-side CI timestamp. Provenance for this forecast rests on the commit alone, which is weaker than a CI-published forecast.",
     "present": "server-side timestamped by GitHub Actions; the run start time is retrievable through the Actions API independently of this repository."
   },
-  "generated_at_utc": "2026-08-17T22:26:55Z",
+  "generated_at_utc": "2026-08-18T22:25:58Z",
   "scoreboards": {
     "baseline/daily/deep": [
       {
@@ -23,7 +23,7 @@
           "sha256": "ea0f15bdd00a0a9b87b82a4fccbae2a0f637a4d5d42d55cabc6f08d782f7e8de"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-08; the T+45 date 2026-09-22 has not arrived yet (now is 2026-08-17)",
+        "reason": "window closes 2026-08-08; the T+45 date 2026-09-22 has not arrived yet (now is 2026-08-18)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -47,7 +47,7 @@
           "sha256": "9678f936fb5022e890c2be4d44685bc6ae76646d7535310663214012c51c490b"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-09; the T+45 date 2026-09-23 has not arrived yet (now is 2026-08-17)",
+        "reason": "window closes 2026-08-09; the T+45 date 2026-09-23 has not arrived yet (now is 2026-08-18)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -71,7 +71,7 @@
           "sha256": "ac79ca9bb1b4e5443109f9070bfba8f766fcaf94bf27a8d127166260ecd71137"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-10; the T+45 date 2026-09-24 has not arrived yet (now is 2026-08-17)",
+        "reason": "window closes 2026-08-10; the T+45 date 2026-09-24 has not arrived yet (now is 2026-08-18)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -95,7 +95,7 @@
           "sha256": "8df1726ba425f589bfe961806a82ce22bc6b3cf0eb88c605f182d5debf1e1c79"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-11; the T+45 date 2026-09-25 has not arrived yet (now is 2026-08-17)",
+        "reason": "window closes 2026-08-11; the T+45 date 2026-09-25 has not arrived yet (now is 2026-08-18)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -119,7 +119,7 @@
           "sha256": "0433edbc06f3dbc5460e64d99e1062a26aafb62bbc1e64ab09d0078a6c9d3bd3"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-12; the T+45 date 2026-09-26 has not arrived yet (now is 2026-08-17)",
+        "reason": "window closes 2026-08-12; the T+45 date 2026-09-26 has not arrived yet (now is 2026-08-18)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -143,7 +143,7 @@
           "sha256": "c5a7a09754e96a91f1c71a2bf88b0353a551423d7607fbc1674129699371e66a"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-13; the T+45 date 2026-09-27 has not arrived yet (now is 2026-08-17)",
+        "reason": "window closes 2026-08-13; the T+45 date 2026-09-27 has not arrived yet (now is 2026-08-18)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -167,7 +167,7 @@
           "sha256": "de2d87c9ec3f143d05fdc450ac4ca8b6c4b5fbf6d848769a43d29a4a3b87f63f"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-14; the T+45 date 2026-09-28 has not arrived yet (now is 2026-08-17)",
+        "reason": "window closes 2026-08-14; the T+45 date 2026-09-28 has not arrived yet (now is 2026-08-18)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -191,7 +191,7 @@
           "sha256": "a4e0a03c0bab083b9d217a6ce5116b42905bbe984167b9ef4068f661e0ddfbf4"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-15; the T+45 date 2026-09-29 has not arrived yet (now is 2026-08-17)",
+        "reason": "window closes 2026-08-15; the T+45 date 2026-09-29 has not arrived yet (now is 2026-08-18)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -215,7 +215,7 @@
           "sha256": "d111a2e2d154ee0f91e2f94b956b9422e5a86a5ad9040c973a994eafef08f500"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-16; the T+45 date 2026-09-30 has not arrived yet (now is 2026-08-17)",
+        "reason": "window closes 2026-08-16; the T+45 date 2026-09-30 has not arrived yet (now is 2026-08-18)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -239,7 +239,7 @@
           "sha256": "6c71c0b7096963df6d743d6beac8543ad0e23b6e817c4a72bb9fb28cd14197ae"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-17; the T+45 date 2026-10-01 has not arrived yet (now is 2026-08-17)",
+        "reason": "window closes 2026-08-17; the T+45 date 2026-10-01 has not arrived yet (now is 2026-08-18)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -263,12 +263,36 @@
           "sha256": "0d6c61e9aa2720998b28b1d44cb627c8b2dd1946a993a3f1ab00b33041ef20de"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-18; the T+45 date 2026-10-02 has not arrived yet (now is 2026-08-17)",
+        "reason": "window closes 2026-08-18; the T+45 date 2026-10-02 has not arrived yet (now is 2026-08-18)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
         "window_end_utc": "2026-08-18T00:00:00Z",
         "window_start_utc": "2026-08-17T00:00:00Z"
+      },
+      {
+        "horizon": "daily",
+        "manifest": {
+          "ci_anchor": {
+            "present": true,
+            "repository": "jjxobi/ex-ante",
+            "run_attempt": "1",
+            "run_id": "32075949165",
+            "run_url": "https://github.com/jjxobi/ex-ante/actions/runs/32075949165",
+            "workflow": "forecast"
+          },
+          "commit_sha": "f3b1e45f0101c5c1fd8f525a3888659276387da2",
+          "lead_hours": 1.6,
+          "published_at_utc": "2026-08-17T22:26:49Z",
+          "sha256": "f5f48ff9dcd1ec220334e4fbed95becc87f3524de64c465e72821aef20763690"
+        },
+        "model": "baseline",
+        "reason": "window closes 2026-08-19; the T+45 date 2026-10-03 has not arrived yet (now is 2026-08-18)",
+        "state": "PUBLISHED_NOT_YET_SCOREABLE",
+        "state_label": "published, not yet scoreable",
+        "stratum": "deep",
+        "window_end_utc": "2026-08-19T00:00:00Z",
+        "window_start_utc": "2026-08-18T00:00:00Z"
       }
     ]
   }

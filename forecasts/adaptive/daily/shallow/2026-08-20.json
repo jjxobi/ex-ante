@@ -8208,6 +8208,6 @@
     "17990121": 0.001057986564120223
   },
   "stratum": "shallow",
-  "window_end_utc": "2026-08-20T00:00:00Z",
-  "window_start_utc": "2026-08-19T00:00:00Z"
+  "window_end_utc": "2026-08-21T00:00:00Z",
+  "window_start_utc": "2026-08-20T00:00:00Z"
 }
