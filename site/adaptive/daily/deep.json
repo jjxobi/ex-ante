@@ -3,7 +3,7 @@
     "absent": "no GITHUB_RUN_ID in the environment: this forecast was not published by a GitHub Actions run, so it carries no server-side CI timestamp. Provenance for this forecast rests on the commit alone, which is weaker than a CI-published forecast.",
     "present": "server-side timestamped by GitHub Actions; the run start time is retrievable through the Actions API independently of this repository."
   },
-  "generated_at_utc": "2026-08-27T03:00:33Z",
+  "generated_at_utc": "2026-08-28T06:00:35Z",
   "scoreboards": {
     "adaptive/daily/deep": [
       {
@@ -23,7 +23,7 @@
           "sha256": "e6a6f1e679b0a8188cc32805b566b384de08de9e73468936ec3d7956d8d91d4b"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-08; the T+45 date 2026-09-22 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-08; the T+45 date 2026-09-22 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -47,7 +47,7 @@
           "sha256": "4d20e3892f4c0a75bba405395b283d2de0a46ec0fe985d015c423db8a223245c"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-09; the T+45 date 2026-09-23 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-09; the T+45 date 2026-09-23 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -71,7 +71,7 @@
           "sha256": "40b89ddfbe7aad75cd0683219ba852d73c1b5256e398a7e124f6a5e114e6d6e3"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-10; the T+45 date 2026-09-24 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-10; the T+45 date 2026-09-24 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -95,7 +95,7 @@
           "sha256": "e61aa1a45052a64a58196dc123e8e7802bc2e7adad06206ef68304607dd9370f"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-11; the T+45 date 2026-09-25 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-11; the T+45 date 2026-09-25 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -119,7 +119,7 @@
           "sha256": "1742d8cb79d41d553154e4daa1339940c0fb853b9f42483b2da042f2de49e316"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-12; the T+45 date 2026-09-26 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-12; the T+45 date 2026-09-26 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -143,7 +143,7 @@
           "sha256": "f67abdc9dc66bee4d1ec4f7f3d3b5346a01c21ddd9c590b65329b342ddd20d3c"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-13; the T+45 date 2026-09-27 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-13; the T+45 date 2026-09-27 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -167,7 +167,7 @@
           "sha256": "e157dd385c4d9e08db5644bc067193b5b24866f92b67e35de8fbe15b3137135c"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-14; the T+45 date 2026-09-28 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-14; the T+45 date 2026-09-28 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -191,7 +191,7 @@
           "sha256": "9d0733a99b93016a3807e6ca3dc9d5717f54f3b9dcebd7202ad5ed687188461e"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-15; the T+45 date 2026-09-29 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-15; the T+45 date 2026-09-29 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -215,7 +215,7 @@
           "sha256": "54ba15009152de22c6f619ef41baf92b4a1edd4bc398c12fbd468667f1d9b882"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-16; the T+45 date 2026-09-30 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-16; the T+45 date 2026-09-30 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -239,7 +239,7 @@
           "sha256": "ff1c87de625801fad175977029b287a2d7c4be98246c1a277bccd48c30cb9a12"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-17; the T+45 date 2026-10-01 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-17; the T+45 date 2026-10-01 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -263,7 +263,7 @@
           "sha256": "d73d81e836de76a237ba35f37529434465271e873f9a2b2926edfc0637a3e429"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-18; the T+45 date 2026-10-02 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-18; the T+45 date 2026-10-02 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -287,7 +287,7 @@
           "sha256": "4c5f62e44c464fcb73f901572e461ce108a003a4a1a5d0438eb2f4f7d328f078"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-19; the T+45 date 2026-10-03 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-19; the T+45 date 2026-10-03 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -311,7 +311,7 @@
           "sha256": "050ab8c25296ed17463e327cecad2ac60a1d0a21f950683144657849dc04cf12"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-20; the T+45 date 2026-10-04 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-20; the T+45 date 2026-10-04 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -335,7 +335,7 @@
           "sha256": "41298dd56868805378ba38f4a6c928f30ff9bc6f066c8ba8c91e2817688b3343"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-21; the T+45 date 2026-10-05 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-21; the T+45 date 2026-10-05 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -359,7 +359,7 @@
           "sha256": "25129e1a83df2100a9f0623d20f677a03e86adeb1095736309aad9b19ae80e07"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-22; the T+45 date 2026-10-06 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-22; the T+45 date 2026-10-06 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -383,7 +383,7 @@
           "sha256": "228f427469908a2161ee86b9388c397cb94a6cfa303517c1b201f3e19ab977e3"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-23; the T+45 date 2026-10-07 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-23; the T+45 date 2026-10-07 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -407,7 +407,7 @@
           "sha256": "73943f1866c7e62e418b7ef959279ae75f9969988212ed62b12c30af53f49579"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-24; the T+45 date 2026-10-08 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-24; the T+45 date 2026-10-08 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -431,7 +431,7 @@
           "sha256": "b45111edb306d4870b5b63a8d0da9e3626b50e2d1bc8aa4a44e14baec2a21a65"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-25; the T+45 date 2026-10-09 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-25; the T+45 date 2026-10-09 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -455,7 +455,7 @@
           "sha256": "fdbbd50e478c7c0f775d54d350db929117d16403db8f6145a4446317991a31ba"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-26; the T+45 date 2026-10-10 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-26; the T+45 date 2026-10-10 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -479,7 +479,7 @@
           "sha256": "24e8604ed3535cab262e57de1dc9a5053d2d0437878c24ce591434dff56ad6f5"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-27; the T+45 date 2026-10-11 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-27; the T+45 date 2026-10-11 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -503,12 +503,36 @@
           "sha256": "96341b7c0024dc970f64637b3a20a84523afe6e84ae7a18a259eb8608c6f02b3"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-28; the T+45 date 2026-10-12 has not arrived yet (now is 2026-08-27)",
+        "reason": "window closes 2026-08-28; the T+45 date 2026-10-12 has not arrived yet (now is 2026-08-28)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
         "window_end_utc": "2026-08-28T00:00:00Z",
         "window_start_utc": "2026-08-27T00:00:00Z"
+      },
+      {
+        "horizon": "daily",
+        "manifest": {
+          "ci_anchor": {
+            "present": true,
+            "repository": "jjxobi/ex-ante",
+            "run_attempt": "1",
+            "run_id": "33034952719",
+            "run_url": "https://github.com/jjxobi/ex-ante/actions/runs/33034952719",
+            "workflow": "forecast"
+          },
+          "commit_sha": "103ca6df530a8c29ee5b4e97f4066b5cfd9fc142",
+          "lead_hours": 21.0,
+          "published_at_utc": "2026-08-27T03:00:22Z",
+          "sha256": "a4602672a3371d377b9309663bff59b58f0fe1be334a8981dc34764bc580c113"
+        },
+        "model": "adaptive",
+        "reason": "window closes 2026-08-29; the T+45 date 2026-10-13 has not arrived yet (now is 2026-08-28)",
+        "state": "PUBLISHED_NOT_YET_SCOREABLE",
+        "state_label": "published, not yet scoreable",
+        "stratum": "deep",
+        "window_end_utc": "2026-08-29T00:00:00Z",
+        "window_start_utc": "2026-08-28T00:00:00Z"
       }
     ]
   }

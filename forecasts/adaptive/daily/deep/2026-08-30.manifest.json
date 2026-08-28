@@ -1,8 +1,8 @@
 {
-  "file": "forecasts/adaptive/daily/deep/2026-08-29.json",
-  "sha256": "8c2ceaf39d69a75afee0cac5b0366b66945cc770b6cb83faf9641ff5482a1647",
-  "window_start_utc": "2026-08-29T00:00:00Z",
-  "window_end_utc": "2026-08-30T00:00:00Z",
+  "file": "forecasts/adaptive/daily/deep/2026-08-30.json",
+  "sha256": "d93b15252fcd1239c74f69d188262162bb654acbd3821d3a5766f1afafe3657e",
+  "window_start_utc": "2026-08-30T00:00:00Z",
+  "window_end_utc": "2026-08-31T00:00:00Z",
   "model": "adaptive",
   "stratum": "deep",
   "published_at_utc": "2026-08-28T06:00:21Z",
