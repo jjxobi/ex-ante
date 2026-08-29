@@ -3,7 +3,7 @@
     "absent": "no GITHUB_RUN_ID in the environment: this forecast was not published by a GitHub Actions run, so it carries no server-side CI timestamp. Provenance for this forecast rests on the commit alone, which is weaker than a CI-published forecast.",
     "present": "server-side timestamped by GitHub Actions; the run start time is retrievable through the Actions API independently of this repository."
   },
-  "generated_at_utc": "2026-08-29T03:34:12Z",
+  "generated_at_utc": "2026-08-29T23:56:54Z",
   "scoreboards": {
     "baseline/daily/shallow": [
       {
