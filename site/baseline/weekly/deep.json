@@ -3,7 +3,7 @@
     "absent": "no GITHUB_RUN_ID in the environment: this forecast was not published by a GitHub Actions run, so it carries no server-side CI timestamp. Provenance for this forecast rests on the commit alone, which is weaker than a CI-published forecast.",
     "present": "server-side timestamped by GitHub Actions; the run start time is retrievable through the Actions API independently of this repository."
   },
-  "generated_at_utc": "2026-08-28T06:00:30Z",
+  "generated_at_utc": "2026-08-29T03:34:17Z",
   "scoreboards": {
     "baseline/weekly/deep": [
       {
@@ -23,7 +23,7 @@
           "sha256": "d0781166e7fd059ba3e08d2cd7057572812ba9175d3fd61c7ecb03deba32f6e5"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-17; the T+45 date 2026-10-01 has not arrived yet (now is 2026-08-28)",
+        "reason": "window closes 2026-08-17; the T+45 date 2026-10-01 has not arrived yet (now is 2026-08-29)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -47,7 +47,7 @@
           "sha256": "af6652d94d48705e60191265333d3b69a21ad1c2e446a427980b3a69dc32439f"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-24; the T+45 date 2026-10-08 has not arrived yet (now is 2026-08-28)",
+        "reason": "window closes 2026-08-24; the T+45 date 2026-10-08 has not arrived yet (now is 2026-08-29)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -71,7 +71,7 @@
           "sha256": "377697073b5f367a8fe5df9504a2dd7826cdc1d345eec7b2c613f08d04d7a414"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-31; the T+45 date 2026-10-15 has not arrived yet (now is 2026-08-28)",
+        "reason": "window closes 2026-08-31; the T+45 date 2026-10-15 has not arrived yet (now is 2026-08-29)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
