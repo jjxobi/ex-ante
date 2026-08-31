@@ -3,7 +3,7 @@
     "absent": "no GITHUB_RUN_ID in the environment: this forecast was not published by a GitHub Actions run, so it carries no server-side CI timestamp. Provenance for this forecast rests on the commit alone, which is weaker than a CI-published forecast.",
     "present": "server-side timestamped by GitHub Actions; the run start time is retrievable through the Actions API independently of this repository."
   },
-  "generated_at_utc": "2026-08-29T23:57:08Z",
+  "generated_at_utc": "2026-08-31T00:16:08Z",
   "scoreboards": {
     "adaptive/weekly/shallow": [
       {
@@ -23,7 +23,7 @@
           "sha256": "e4a430381a36a705fa38cc6fcbc8719e1034d0cc70ccb1c18ae3e75ab1221045"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-17; the T+45 date 2026-10-01 has not arrived yet (now is 2026-08-29)",
+        "reason": "window closes 2026-08-17; the T+45 date 2026-10-01 has not arrived yet (now is 2026-08-31)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
@@ -47,7 +47,7 @@
           "sha256": "be8039fab002fa7793f72a9b5fb11f5968c8840c99355d940c56d3c1c7b30e23"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-24; the T+45 date 2026-10-08 has not arrived yet (now is 2026-08-29)",
+        "reason": "window closes 2026-08-24; the T+45 date 2026-10-08 has not arrived yet (now is 2026-08-31)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
@@ -71,12 +71,36 @@
           "sha256": "efab191815388dbb847e73b58c0c33cb83d6250fe5ca0a00936e625fa74a48e7"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-31; the T+45 date 2026-10-15 has not arrived yet (now is 2026-08-29)",
+        "reason": "window closes 2026-08-31; the T+45 date 2026-10-15 has not arrived yet (now is 2026-08-31)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
         "window_end_utc": "2026-08-31T00:00:00Z",
         "window_start_utc": "2026-08-24T00:00:00Z"
+      },
+      {
+        "horizon": "weekly",
+        "manifest": {
+          "ci_anchor": {
+            "present": true,
+            "repository": "jjxobi/ex-ante",
+            "run_attempt": "1",
+            "run_id": "33282109809",
+            "run_url": "https://github.com/jjxobi/ex-ante/actions/runs/33282109809",
+            "workflow": "forecast"
+          },
+          "commit_sha": "1d7fc0d6be8c0cfd3d96c79b050f53020472f364",
+          "lead_hours": 24.1,
+          "published_at_utc": "2026-08-29T23:56:51Z",
+          "sha256": "089307baf6587564e6168793d1996ecbaa794700c99cbf664c3e22ce41738bf0"
+        },
+        "model": "adaptive",
+        "reason": "window closes 2026-09-07; the T+45 date 2026-10-22 has not arrived yet (now is 2026-08-31)",
+        "state": "PUBLISHED_NOT_YET_SCOREABLE",
+        "state_label": "published, not yet scoreable",
+        "stratum": "shallow",
+        "window_end_utc": "2026-09-07T00:00:00Z",
+        "window_start_utc": "2026-08-31T00:00:00Z"
       }
     ]
   }
