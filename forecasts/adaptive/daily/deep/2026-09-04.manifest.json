@@ -1,11 +1,11 @@
 {
-  "file": "forecasts/adaptive/daily/shallow/2026-09-03.json",
-  "sha256": "15753ab6aeb08119a88bbbfc0e04fde45f3484cec1a639a719a41b66ac03442e",
-  "window_start_utc": "2026-09-03T00:00:00Z",
-  "window_end_utc": "2026-09-04T00:00:00Z",
+  "file": "forecasts/adaptive/daily/deep/2026-09-04.json",
+  "sha256": "461955c710fe0ac9593a1fbaf4a274a72124f3d62cb3c49bdfeff36b3ed7d33a",
+  "window_start_utc": "2026-09-04T00:00:00Z",
+  "window_end_utc": "2026-09-05T00:00:00Z",
   "model": "adaptive",
-  "stratum": "shallow",
-  "published_at_utc": "2026-09-02T23:54:59Z",
+  "stratum": "deep",
+  "published_at_utc": "2026-09-02T23:55:00Z",
   "anchors": {
     "commit": {
       "sha": "e07638bd8e5ed927d9369a89bf3c7ebea58ba0a1",
