@@ -3,7 +3,7 @@
     "absent": "no GITHUB_RUN_ID in the environment: this forecast was not published by a GitHub Actions run, so it carries no server-side CI timestamp. Provenance for this forecast rests on the commit alone, which is weaker than a CI-published forecast.",
     "present": "server-side timestamped by GitHub Actions; the run start time is retrievable through the Actions API independently of this repository."
   },
-  "generated_at_utc": "2026-09-03T23:50:52Z",
+  "generated_at_utc": "2026-09-04T23:48:11Z",
   "scoreboards": {
     "baseline/weekly/shallow": [
       {
@@ -23,7 +23,7 @@
           "sha256": "ac10a187900bcaa43dc36da54de895cdd6cb5687b2538fa7ca1bd5fb85c768cd"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-17; the T+45 date 2026-10-01 has not arrived yet (now is 2026-09-03)",
+        "reason": "window closes 2026-08-17; the T+45 date 2026-10-01 has not arrived yet (now is 2026-09-04)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
@@ -47,7 +47,7 @@
           "sha256": "f733cad41c5d37a5d1458eb5f8e615da0e28699ba834c99bde40b8c699ec69f0"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-24; the T+45 date 2026-10-08 has not arrived yet (now is 2026-09-03)",
+        "reason": "window closes 2026-08-24; the T+45 date 2026-10-08 has not arrived yet (now is 2026-09-04)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
@@ -71,7 +71,7 @@
           "sha256": "d926abdb85605c93b56a638d3f20c3a36f95db2e748d168c075357331f639f75"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-31; the T+45 date 2026-10-15 has not arrived yet (now is 2026-09-03)",
+        "reason": "window closes 2026-08-31; the T+45 date 2026-10-15 has not arrived yet (now is 2026-09-04)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
@@ -95,7 +95,7 @@
           "sha256": "ea8d354513ebbee135032475975f3ae55559932f2c3cbacbe7cef022ebf0ee1a"
         },
         "model": "baseline",
-        "reason": "window closes 2026-09-07; the T+45 date 2026-10-22 has not arrived yet (now is 2026-09-03)",
+        "reason": "window closes 2026-09-07; the T+45 date 2026-10-22 has not arrived yet (now is 2026-09-04)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
