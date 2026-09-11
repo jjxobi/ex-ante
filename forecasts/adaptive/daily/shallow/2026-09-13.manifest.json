@@ -1,11 +1,11 @@
 {
-  "file": "forecasts/baseline/daily/deep/2026-09-12.json",
-  "sha256": "7899e606b184dcd26eeb0616c484f7817325b1939ba59de42c993aace240d85d",
-  "window_start_utc": "2026-09-12T00:00:00Z",
-  "window_end_utc": "2026-09-13T00:00:00Z",
-  "model": "baseline",
-  "stratum": "deep",
-  "published_at_utc": "2026-09-11T23:56:26Z",
+  "file": "forecasts/adaptive/daily/shallow/2026-09-13.json",
+  "sha256": "5c198378a42eebf5cbe1a45c670faa2fba7cf87204ab6865ec7d4b3520cde996",
+  "window_start_utc": "2026-09-13T00:00:00Z",
+  "window_end_utc": "2026-09-14T00:00:00Z",
+  "model": "adaptive",
+  "stratum": "shallow",
+  "published_at_utc": "2026-09-11T23:56:27Z",
   "anchors": {
     "commit": {
       "sha": "174291c02e0a8ee67a455bbcfa14be26bc8862be",
@@ -22,7 +22,7 @@
     }
   },
   "horizon": "daily",
-  "model_version": "baseline-v1",
+  "model_version": "adaptive-v1",
   "input_catalogue_hash": "e75b8102ca585e07baf019898bb2b8d9fbda69bf4fdba1ab61742b4394deddcc",
   "grid_hash": "14b2e0b854b5ae89771ad3346204e801f1f32580fd9a09481b9b6f6fe9cd4e44"
 }
