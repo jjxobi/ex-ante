@@ -1,11 +1,11 @@
 {
-  "file": "forecasts/baseline/weekly/shallow/2026-09-21.json",
-  "sha256": "b2849e2ee4e26c207154c020490b4fa90ff00f65c604c6de40c6d24981ea3b62",
-  "window_start_utc": "2026-09-21T00:00:00Z",
-  "window_end_utc": "2026-09-28T00:00:00Z",
+  "file": "forecasts/baseline/weekly/deep/2026-09-28.json",
+  "sha256": "9619df85c5bd8045369bf655e2c358976d162388684e49d84a8dbaa27ae38384",
+  "window_start_utc": "2026-09-28T00:00:00Z",
+  "window_end_utc": "2026-10-05T00:00:00Z",
   "model": "baseline",
-  "stratum": "shallow",
-  "published_at_utc": "2026-09-15T00:23:07Z",
+  "stratum": "deep",
+  "published_at_utc": "2026-09-15T00:23:08Z",
   "anchors": {
     "commit": {
       "sha": "726b66bb5de903bc0105cecfab18d619f5888e0c",
