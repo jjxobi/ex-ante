@@ -1,28 +1,28 @@
 {
   "file": "forecasts/baseline/weekly/shallow/2026-09-28.json",
-  "sha256": "5cf371ff3ec28bc8ec98afb94b3356724ff10dc2d85e499058e51fbddcb417a3",
+  "sha256": "96bc1526694d45a67a4d3faa99b76b13a3ca9d78922bb1adaed98839e4bb6693",
   "window_start_utc": "2026-09-28T00:00:00Z",
   "window_end_utc": "2026-10-05T00:00:00Z",
   "model": "baseline",
   "stratum": "shallow",
-  "published_at_utc": "2026-09-24T00:17:43Z",
+  "published_at_utc": "2026-09-25T00:20:18Z",
   "anchors": {
     "commit": {
-      "sha": "2a282c7fc78a884ed7739c46a76ed8d6c2b62d00",
+      "sha": "9e1a349a779b04e0103b602c0738b255b41aedfc",
       "note": "the weaker of the two anchors per D10: both the author date and the committer date are fields the committer sets, so this is a cheap first check, never proof on its own."
     },
     "ci_run": {
       "present": true,
-      "run_id": "35937660681",
+      "run_id": "36076977615",
       "run_attempt": "1",
       "workflow": "forecast",
       "repository": "jjxobi/ex-ante",
-      "run_url": "https://github.com/jjxobi/ex-ante/actions/runs/35937660681",
+      "run_url": "https://github.com/jjxobi/ex-ante/actions/runs/36076977615",
       "note": "server-side timestamped by GitHub Actions; the run start time is retrievable through the Actions API independently of this repository."
     }
   },
   "horizon": "weekly",
   "model_version": "baseline-v1",
-  "input_catalogue_hash": "4a97c70be42653294c7002addc805247dc713b828a53cc101a50f58c731d50be",
+  "input_catalogue_hash": "b06c2c5d396849dd73fb07e3cbc46467a5bf811f599f26adb40fb3018cfd3a22",
   "grid_hash": "14b2e0b854b5ae89771ad3346204e801f1f32580fd9a09481b9b6f6fe9cd4e44"
 }
