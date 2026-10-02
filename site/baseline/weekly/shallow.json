@@ -3,16 +3,10 @@
     "absent": "no GITHUB_RUN_ID in the environment: this forecast was not published by a GitHub Actions run, so it carries no server-side CI timestamp. Provenance for this forecast rests on the commit alone, which is weaker than a CI-published forecast.",
     "present": "server-side timestamped by GitHub Actions; the run start time is retrievable through the Actions API independently of this repository."
   },
-  "generated_at_utc": "2026-10-01T01:08:53Z",
+  "generated_at_utc": "2026-10-02T01:22:16Z",
   "scoreboards": {
     "baseline/weekly/shallow": [
       {
-        "counts": {
-          "actual": 14.0,
-          "difference": -1.141380947015815,
-          "mask_id": "14b2e0b854b5ae89771ad3346204e801f1f32580fd9a09481b9b6f6fe9cd4e44",
-          "predicted": 15.141380947015815
-        },
         "horizon": "weekly",
         "manifest": {
           "ci_anchor": {
@@ -29,43 +23,10 @@
           "sha256": "ac10a187900bcaa43dc36da54de895cdd6cb5687b2538fa7ca1bd5fb85c768cd"
         },
         "model": "baseline",
-        "n_events": 30,
-        "state": "SCORED",
-        "state_label": "scored",
+        "reason": "no snapshot for 2026-10-01. Refusing to substitute a nearby date, because that would make a frozen evaluation catalogue mean something different for this window than for every other one. Available: ['2026-10-02']",
+        "state": "SCORING_FAILED",
+        "state_label": "scoring failed",
         "stratum": "shallow",
-        "tests": {
-          "L": {
-            "label": null,
-            "name": "L",
-            "observed_statistic": -121.13052207064337,
-            "quantile": 0.374,
-            "status": "APPLICABLE"
-          },
-          "M": {
-            "label": null,
-            "name": "M",
-            "observed_statistic": -19.784703889255212,
-            "quantile": 0.301,
-            "status": "APPLICABLE"
-          },
-          "N": {
-            "label": null,
-            "name": "N",
-            "observed_statistic": 14.0,
-            "quantile": [
-              0.65016997995999,
-              0.4512422331383151
-            ],
-            "status": "APPLICABLE"
-          },
-          "S": {
-            "label": null,
-            "name": "S",
-            "observed_statistic": -88.26632810676342,
-            "quantile": 0.007,
-            "status": "APPLICABLE"
-          }
-        },
         "window_end_utc": "2026-08-17T00:00:00Z",
         "window_start_utc": "2026-08-10T00:00:00Z"
       },
@@ -86,7 +47,7 @@
           "sha256": "f733cad41c5d37a5d1458eb5f8e615da0e28699ba834c99bde40b8c699ec69f0"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-24; the T+45 date 2026-10-08 has not arrived yet (now is 2026-10-01)",
+        "reason": "window closes 2026-08-24; the T+45 date 2026-10-08 has not arrived yet (now is 2026-10-02)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
@@ -110,7 +71,7 @@
           "sha256": "d926abdb85605c93b56a638d3f20c3a36f95db2e748d168c075357331f639f75"
         },
         "model": "baseline",
-        "reason": "window closes 2026-08-31; the T+45 date 2026-10-15 has not arrived yet (now is 2026-10-01)",
+        "reason": "window closes 2026-08-31; the T+45 date 2026-10-15 has not arrived yet (now is 2026-10-02)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
@@ -134,7 +95,7 @@
           "sha256": "ea8d354513ebbee135032475975f3ae55559932f2c3cbacbe7cef022ebf0ee1a"
         },
         "model": "baseline",
-        "reason": "window closes 2026-09-07; the T+45 date 2026-10-22 has not arrived yet (now is 2026-10-01)",
+        "reason": "window closes 2026-09-07; the T+45 date 2026-10-22 has not arrived yet (now is 2026-10-02)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
@@ -158,7 +119,7 @@
           "sha256": "5ffa1feb417aa67c8198f7ebf45b8ec16ad90689dee7f1cc86dd365e832dd040"
         },
         "model": "baseline",
-        "reason": "window closes 2026-09-14; the T+45 date 2026-10-29 has not arrived yet (now is 2026-10-01)",
+        "reason": "window closes 2026-09-14; the T+45 date 2026-10-29 has not arrived yet (now is 2026-10-02)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
@@ -182,7 +143,7 @@
           "sha256": "31aacb0145e2b1c5483db0d036e3d5794056e640406908c9e1dc2773451a7d00"
         },
         "model": "baseline",
-        "reason": "window closes 2026-09-21; the T+45 date 2026-11-05 has not arrived yet (now is 2026-10-01)",
+        "reason": "window closes 2026-09-21; the T+45 date 2026-11-05 has not arrived yet (now is 2026-10-02)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
@@ -206,7 +167,7 @@
           "sha256": "e13dd4c29fee1108a1603a437ad38de075c2d80330de85814034b8f8f4c481ff"
         },
         "model": "baseline",
-        "reason": "window closes 2026-09-28; the T+45 date 2026-11-12 has not arrived yet (now is 2026-10-01)",
+        "reason": "window closes 2026-09-28; the T+45 date 2026-11-12 has not arrived yet (now is 2026-10-02)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
@@ -230,7 +191,7 @@
           "sha256": "916c7385816e193d80e1d8ab6c498ff8b6d28f88d4078de75913d94f452a63cd"
         },
         "model": "baseline",
-        "reason": "window closes 2026-10-05; the T+45 date 2026-11-19 has not arrived yet (now is 2026-10-01)",
+        "reason": "window closes 2026-10-05; the T+45 date 2026-11-19 has not arrived yet (now is 2026-10-02)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "shallow",
