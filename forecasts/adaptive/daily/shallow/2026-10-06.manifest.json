@@ -1,11 +1,11 @@
 {
-  "file": "forecasts/baseline/weekly/shallow/2026-10-05.json",
-  "sha256": "ffa69e1aea6f4d448a5190f1b0737cffd5ab39672d6de2069376f1dc0a393e72",
-  "window_start_utc": "2026-10-05T00:00:00Z",
-  "window_end_utc": "2026-10-12T00:00:00Z",
-  "model": "baseline",
+  "file": "forecasts/adaptive/daily/shallow/2026-10-06.json",
+  "sha256": "6c55541804ab3154e05fb36640972b8a1a7fe396893bb20140efdee6af89a9f8",
+  "window_start_utc": "2026-10-06T00:00:00Z",
+  "window_end_utc": "2026-10-07T00:00:00Z",
+  "model": "adaptive",
   "stratum": "shallow",
-  "published_at_utc": "2026-10-04T00:25:31Z",
+  "published_at_utc": "2026-10-04T00:25:32Z",
   "anchors": {
     "commit": {
       "sha": "88eed8ccd0d11ada6b6813c0ae4cc4576a7cd7c7",
@@ -21,8 +21,8 @@
       "note": "server-side timestamped by GitHub Actions; the run start time is retrievable through the Actions API independently of this repository."
     }
   },
-  "horizon": "weekly",
-  "model_version": "baseline-v1",
+  "horizon": "daily",
+  "model_version": "adaptive-v1",
   "input_catalogue_hash": "d4c1c9534baa480d91b5040e31e22799082f7b125e1e6ba0bd4383add32f0719",
   "grid_hash": "14b2e0b854b5ae89771ad3346204e801f1f32580fd9a09481b9b6f6fe9cd4e44"
 }
