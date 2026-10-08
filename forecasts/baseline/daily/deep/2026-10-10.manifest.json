@@ -1,8 +1,8 @@
 {
-  "file": "forecasts/baseline/weekly/deep/2026-10-19.json",
-  "sha256": "6c92eb2850ad08ceb7270a15ba85579393d879176f52b6513104544494adce6b",
-  "window_start_utc": "2026-10-19T00:00:00Z",
-  "window_end_utc": "2026-10-26T00:00:00Z",
+  "file": "forecasts/baseline/daily/deep/2026-10-10.json",
+  "sha256": "197da3a198387bd5f3d24e96773d17d509bc76631f7477f4c8aa84afd19dc470",
+  "window_start_utc": "2026-10-10T00:00:00Z",
+  "window_end_utc": "2026-10-11T00:00:00Z",
   "model": "baseline",
   "stratum": "deep",
   "published_at_utc": "2026-10-08T01:37:14Z",
@@ -21,7 +21,7 @@
       "note": "server-side timestamped by GitHub Actions; the run start time is retrievable through the Actions API independently of this repository."
     }
   },
-  "horizon": "weekly",
+  "horizon": "daily",
   "model_version": "baseline-v1",
   "input_catalogue_hash": "3ace7be381c7eb0090002ef55a55029fe627ed3506a347b7bc87ef520f19a4c0",
   "grid_hash": "14b2e0b854b5ae89771ad3346204e801f1f32580fd9a09481b9b6f6fe9cd4e44"
