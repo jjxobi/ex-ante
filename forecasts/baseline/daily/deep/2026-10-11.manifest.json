@@ -1,8 +1,8 @@
 {
-  "file": "forecasts/baseline/daily/deep/2026-10-10.json",
-  "sha256": "9d21d66239353302b89045c97d5d0d7adb82d178b75f8ce2f3b3ec8dd06b7114",
-  "window_start_utc": "2026-10-10T00:00:00Z",
-  "window_end_utc": "2026-10-11T00:00:00Z",
+  "file": "forecasts/baseline/daily/deep/2026-10-11.json",
+  "sha256": "03a59c064df4e11176c78cfc5751cba10a246acaee210cb3cb0d5b92f16c755f",
+  "window_start_utc": "2026-10-11T00:00:00Z",
+  "window_end_utc": "2026-10-12T00:00:00Z",
   "model": "baseline",
   "stratum": "deep",
   "published_at_utc": "2026-10-09T01:47:53Z",

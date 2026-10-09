@@ -3,7 +3,7 @@
     "absent": "no GITHUB_RUN_ID in the environment: this forecast was not published by a GitHub Actions run, so it carries no server-side CI timestamp. Provenance for this forecast rests on the commit alone, which is weaker than a CI-published forecast.",
     "present": "server-side timestamped by GitHub Actions; the run start time is retrievable through the Actions API independently of this repository."
   },
-  "generated_at_utc": "2026-10-08T01:37:46Z",
+  "generated_at_utc": "2026-10-09T01:48:18Z",
   "scoreboards": {
     "adaptive/weekly/deep": [
       {
@@ -23,7 +23,7 @@
           "sha256": "bc7de713308fe5e767116ab508c0a8c7e2a5e2a4cda04c9dd72ebda48602d6f5"
         },
         "model": "adaptive",
-        "reason": "no snapshot for 2026-10-01. Refusing to substitute a nearby date, because that would make a frozen evaluation catalogue mean something different for this window than for every other one. Available: ['2026-10-08']",
+        "reason": "no snapshot for 2026-10-01. Refusing to substitute a nearby date, because that would make a frozen evaluation catalogue mean something different for this window than for every other one. Available: ['2026-10-09']",
         "state": "SCORING_FAILED",
         "state_label": "scoring failed",
         "stratum": "deep",
@@ -31,12 +31,6 @@
         "window_start_utc": "2026-08-10T00:00:00Z"
       },
       {
-        "counts": {
-          "actual": 6.0,
-          "difference": -2.2205305953196977,
-          "mask_id": "14b2e0b854b5ae89771ad3346204e801f1f32580fd9a09481b9b6f6fe9cd4e44",
-          "predicted": 8.220530595319698
-        },
         "horizon": "weekly",
         "manifest": {
           "ci_anchor": {
@@ -53,43 +47,10 @@
           "sha256": "d1078961385647f202535656f4fd7a4708365a7b7ede41b21ae888a6ce9f5c55"
         },
         "model": "adaptive",
-        "n_events": 24,
-        "state": "SCORED",
-        "state_label": "scored",
+        "reason": "no snapshot for 2026-10-08. Refusing to substitute a nearby date, because that would make a frozen evaluation catalogue mean something different for this window than for every other one. Available: ['2026-10-09']",
+        "state": "SCORING_FAILED",
+        "state_label": "scoring failed",
         "stratum": "deep",
-        "tests": {
-          "L": {
-            "label": null,
-            "name": "L",
-            "observed_statistic": -51.05165081573445,
-            "quantile": 0.768,
-            "status": "APPLICABLE"
-          },
-          "M": {
-            "label": null,
-            "name": "M",
-            "observed_statistic": -9.71389539093782,
-            "quantile": 0.809,
-            "status": "APPLICABLE"
-          },
-          "N": {
-            "label": null,
-            "name": "N",
-            "observed_statistic": 6.0,
-            "quantile": [
-              0.8281407325442034,
-              0.2871874712255075
-            ],
-            "status": "APPLICABLE"
-          },
-          "S": {
-            "label": null,
-            "name": "S",
-            "observed_statistic": -36.94906691706324,
-            "quantile": 0.429,
-            "status": "APPLICABLE"
-          }
-        },
         "window_end_utc": "2026-08-24T00:00:00Z",
         "window_start_utc": "2026-08-17T00:00:00Z"
       },
@@ -110,7 +71,7 @@
           "sha256": "2268ca156a75b5a27552f8d41abcd4f38d54e58f62cffbc7e13ab57d78c09bbf"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-08-31; the T+45 date 2026-10-15 has not arrived yet (now is 2026-10-08)",
+        "reason": "window closes 2026-08-31; the T+45 date 2026-10-15 has not arrived yet (now is 2026-10-09)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -134,7 +95,7 @@
           "sha256": "9065a7d2b44a8d08ef6571241f067e3f8d182a0ebadbf13d983abc1cfc4ab2b7"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-09-07; the T+45 date 2026-10-22 has not arrived yet (now is 2026-10-08)",
+        "reason": "window closes 2026-09-07; the T+45 date 2026-10-22 has not arrived yet (now is 2026-10-09)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -158,7 +119,7 @@
           "sha256": "a4b03b0c90c90e417b163d588063cc126726ec77ea604a34c0eb6f6377a68c48"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-09-14; the T+45 date 2026-10-29 has not arrived yet (now is 2026-10-08)",
+        "reason": "window closes 2026-09-14; the T+45 date 2026-10-29 has not arrived yet (now is 2026-10-09)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -182,7 +143,7 @@
           "sha256": "650ce0bef98a71fc4aa5f3dcea8e5b7a0ca9e5fe37c691aa94659ad55e9386b4"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-09-21; the T+45 date 2026-11-05 has not arrived yet (now is 2026-10-08)",
+        "reason": "window closes 2026-09-21; the T+45 date 2026-11-05 has not arrived yet (now is 2026-10-09)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -206,7 +167,7 @@
           "sha256": "ec56bf58691f4a2b74e35a30d9de49f5a221fa206455cfb5da0ff016446af57d"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-09-28; the T+45 date 2026-11-12 has not arrived yet (now is 2026-10-08)",
+        "reason": "window closes 2026-09-28; the T+45 date 2026-11-12 has not arrived yet (now is 2026-10-09)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -230,7 +191,7 @@
           "sha256": "bba3084cd5f819860b61c55d2111bee42f0f320ae913317d901c2c3d2eb88483"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-10-05; the T+45 date 2026-11-19 has not arrived yet (now is 2026-10-08)",
+        "reason": "window closes 2026-10-05; the T+45 date 2026-11-19 has not arrived yet (now is 2026-10-09)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
@@ -254,7 +215,7 @@
           "sha256": "9d28d63adc58bad36758d85db39be90f981d9174391a4ff533e9b3322f4356f1"
         },
         "model": "adaptive",
-        "reason": "window closes 2026-10-12; the T+45 date 2026-11-26 has not arrived yet (now is 2026-10-08)",
+        "reason": "window closes 2026-10-12; the T+45 date 2026-11-26 has not arrived yet (now is 2026-10-09)",
         "state": "PUBLISHED_NOT_YET_SCOREABLE",
         "state_label": "published, not yet scoreable",
         "stratum": "deep",
