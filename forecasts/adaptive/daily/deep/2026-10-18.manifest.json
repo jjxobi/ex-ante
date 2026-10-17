@@ -5,24 +5,24 @@
   "window_end_utc": "2026-10-19T00:00:00Z",
   "model": "adaptive",
   "stratum": "deep",
-  "published_at_utc": "2026-10-17T00:12:25Z",
+  "published_at_utc": "2026-10-17T23:50:09Z",
   "anchors": {
     "commit": {
-      "sha": "78a6d8dc5fad635723f091c342450c93881d5a58",
+      "sha": "f238e9515b68d89768e903848f123e2d5973e315",
       "note": "the weaker of the two anchors per D10: both the author date and the committer date are fields the committer sets, so this is a cheap first check, never proof on its own."
     },
     "ci_run": {
       "present": true,
-      "run_id": "38985191086",
+      "run_id": "39080450615",
       "run_attempt": "1",
       "workflow": "forecast",
       "repository": "jjxobi/ex-ante",
-      "run_url": "https://github.com/jjxobi/ex-ante/actions/runs/38985191086",
+      "run_url": "https://github.com/jjxobi/ex-ante/actions/runs/39080450615",
       "note": "server-side timestamped by GitHub Actions; the run start time is retrievable through the Actions API independently of this repository."
     }
   },
   "horizon": "daily",
   "model_version": "adaptive-v1",
-  "input_catalogue_hash": "cc5dc29274d8c33718364408a418c0d8100c3359b0c728eb6c39d727c0eebe4e",
+  "input_catalogue_hash": "ed8eb75d4f2b88a602dd78e2892195f3c9ce5d396b2ee974e3233222272e864e",
   "grid_hash": "14b2e0b854b5ae89771ad3346204e801f1f32580fd9a09481b9b6f6fe9cd4e44"
 }
