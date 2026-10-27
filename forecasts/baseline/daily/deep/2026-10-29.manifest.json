@@ -1,0 +1,28 @@
+{
+  "file": "forecasts/baseline/daily/deep/2026-10-29.json",
+  "sha256": "9e7e9832dfdf348025563b4bca414d4a21be477117c24b1315c110d85e8fe7da",
+  "window_start_utc": "2026-10-29T00:00:00Z",
+  "window_end_utc": "2026-10-30T00:00:00Z",
+  "model": "baseline",
+  "stratum": "deep",
+  "published_at_utc": "2026-10-27T01:15:15Z",
+  "anchors": {
+    "commit": {
+      "sha": "5232073f6b9b1c968ef537c411c8449d783ed3e8",
+      "note": "the weaker of the two anchors per D10: both the author date and the committer date are fields the committer sets, so this is a cheap first check, never proof on its own."
+    },
+    "ci_run": {
+      "present": true,
+      "run_id": "40431360980",
+      "run_attempt": "1",
+      "workflow": "forecast",
+      "repository": "jjxobi/ex-ante",
+      "run_url": "https://github.com/jjxobi/ex-ante/actions/runs/40431360980",
+      "note": "server-side timestamped by GitHub Actions; the run start time is retrievable through the Actions API independently of this repository."
+    }
+  },
+  "horizon": "daily",
+  "model_version": "baseline-v1",
+  "input_catalogue_hash": "d758cff79e8ea1503e9a234c1926c04b41b25f16ce1decc80def6386e35dc705",
+  "grid_hash": "14b2e0b854b5ae89771ad3346204e801f1f32580fd9a09481b9b6f6fe9cd4e44"
+}
